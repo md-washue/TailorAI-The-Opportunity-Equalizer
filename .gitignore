@@ -1,4 +1,4 @@
 .env
-venv/
+tailor_venv/
 __pycache__/
 *.sqlite3
