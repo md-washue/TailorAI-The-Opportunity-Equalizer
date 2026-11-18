@@ -1,4 +1,6 @@
 .env
 tailor_venv/
+.venv/
 __pycache__/
 *.sqlite3
+AGENT.md
