@@ -19,7 +19,7 @@ Candidates from non-elite regions often lack access to expensive executive coach
 
 ## 🏛️ System Architecture & Engineering Principles
 
-TailorAI is engineered with strict systems-level constraints defined in `AGENT.md`:
+TailorAI is engineered with strict systems-level:
 
 ```
 TailorAI-The-Opportunity-Equalizer/
@@ -64,21 +64,7 @@ Structured strings are escaped through a custom LaTeX filter (`tex_escape`) and 
 - **PDF Cap:** Ingestion capped at 3 pages maximum via `pypdf`.
 - **Ephemeral Telemetry:** SQLite database (`metrics.sqlite3`) operating in **WAL mode** logs only anonymous counters (`parse`, `optimize`, `export_tex`). No resume text or PII is ever written to disk or database.
 
----
 
-## 🎨 Visual Identity & Editorial Theme
-
-TailorAI features a bespoke Editorial Ivory & Burgundy palette tailored for readability, academic rigor, and elegance:
-
-| Token | Hex Code | Purpose |
-| :--- | :--- | :--- |
-| **Primary** | `#803B4B` | Rich Burgundy — Headings, primary actions, and borders |
-| **Background** | `#F3EFE7` | Warm Ivory — High readability, reduced glare |
-| **Secondary Background** | `#E8E3D9` | Oatmeal / Parchment — Cards, download buttons, badges |
-| **Text** | `#242323` | Deep Charcoal — Editorial contrast |
-| **Typography** | `Fraunces` / `Newsreader` / `JetBrains Mono` | Editorial display, literary serif body, monospaced diffs |
-
----
 
 ## ⚡ Quickstart Guide
 
