@@ -88,7 +88,7 @@ def log_event(session_id: str, event_type: str, success: bool):
         pass
 
 def get_telemetry_counts() -> dict:
-    counts = {"parse": 0, "optimize": 0, "export_tex": 0}
+    counts = {"parse": 0, "optimize": 0, "export_tex": 0, "cover_letter": 0}
     try:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
@@ -1011,6 +1011,7 @@ with tab_input:
                     projects=edited_projects,
                     skills=updated_skills,
                 )
+                clear_form_state()
                 st.success("Candidate profile updated in session state!")
                 st.rerun()
     else:
@@ -1229,8 +1230,10 @@ with tab_optimize:
                                 active_key,
                             )
                             st.session_state["cover_letter"] = cv_text
+                            log_event(st.session_state["session_id"], "cover_letter", True)
                             st.success("Cover letter ready!")
                         except Exception as e:
+                            log_event(st.session_state["session_id"], "cover_letter", False)
                             err_str = str(e)
                             if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
                                 st.warning("⚠️ **Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again.")

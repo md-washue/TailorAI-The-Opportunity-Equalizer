@@ -1,5 +1,12 @@
 # TailorAI Comprehensive Unit Test Suite
+import os
 import copy
+import shutil
+import tempfile
+from unittest.mock import patch, MagicMock
+import requests
+
+import app
 from app import (
     tex_escape,
     render_latex,
@@ -15,10 +22,6 @@ from app import (
     EducationItem,
     OptimizationResult,
     IndexedBullet,
-    log_event,
-    get_telemetry_counts,
-    check_and_increment_demo,
-    get_demo_remaining,
 )
 
 def test_tex_escape():
@@ -117,6 +120,20 @@ def test_positional_optimization_mapping():
                 bullet_index=0,
                 improved="Engineered resilient distributed task queue with asyncio, processing 15,000 tasks/min with zero downtime.",
             ),
+            # Unknown section name (e.g. 'volunteering')
+            IndexedBullet(
+                section="volunteering",
+                item_index=0,
+                bullet_index=0,
+                improved="Led local hackathon organizing committee.",
+            ),
+            # Empty section name
+            IndexedBullet(
+                section="",
+                item_index=0,
+                bullet_index=0,
+                improved="Orphaned bullet.",
+            ),
             # Out of bounds item_index (should not crash)
             IndexedBullet(
                 section="experience",
@@ -124,12 +141,26 @@ def test_positional_optimization_mapping():
                 bullet_index=0,
                 improved="Invalid item index bullet.",
             ),
-            # Negative index (should be ignored safely)
+            # Out of bounds bullet_index (should not crash)
+            IndexedBullet(
+                section="experience",
+                item_index=0,
+                bullet_index=99,
+                improved="Invalid bullet index bullet.",
+            ),
+            # Negative item index (should be safely ignored)
             IndexedBullet(
                 section="projects",
                 item_index=-1,
                 bullet_index=0,
-                improved="Negative index bullet.",
+                improved="Negative item index bullet.",
+            ),
+            # Negative bullet index (should be safely ignored)
+            IndexedBullet(
+                section="projects",
+                item_index=0,
+                bullet_index=-1,
+                improved="Negative bullet index bullet.",
             ),
         ]
     )
@@ -162,22 +193,117 @@ def test_positional_optimization_mapping():
     assert len(diff_records) == 2
     assert "Architected distributed event-streaming" in tailored.experience[0].bullets[0]
     assert "Engineered resilient distributed task queue" in tailored.projects[0].bullets[0]
-    print("✓ test_positional_optimization_mapping passed")
 
-def test_telemetry():
-    log_event("test-session-audit", "parse", True)
-    log_event("test-session-audit", "optimize", True)
-    log_event("test-session-audit", "export_tex", True)
-    counts = get_telemetry_counts()
-    assert counts["parse"] >= 1
-    assert counts["optimize"] >= 1
-    assert counts["export_tex"] >= 1
-    print("✓ test_telemetry passed")
+    # Test empty OptimizationResult (no bullets)
+    empty_opt = OptimizationResult(bullets=[])
+    assert len(empty_opt.bullets) == 0
+
+    print("✓ test_positional_optimization_mapping passed (all bounds & edge cases verified)")
+
+def test_fetch_github_repos():
+    # 1. Empty / whitespace username returns empty string
+    assert app.fetch_github_repos("") == ""
+    assert app.fetch_github_repos("   ") == ""
+    assert app.fetch_github_repos(None) == ""
+
+    # 2. Mocking successful 200 response
+    mock_repos = [
+        {"name": "repo-one", "description": "A high-performance cache", "language": "Python"},
+        {"name": "repo-two", "description": None, "language": "Go"},
+    ]
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = mock_repos
+
+    with patch("requests.get", return_value=mock_resp) as mock_get:
+        output = app.fetch_github_repos("octocat")
+        assert "repo-one (Language: Python)" in output
+        assert "A high-performance cache" in output
+        assert "repo-two (Language: Go)" in output
+        assert "No description provided." in output
+        # Verify User-Agent header was sent
+        call_kwargs = mock_get.call_args[1]
+        assert call_kwargs["headers"]["User-Agent"] == "TailorAI-HackTheGap"
+        assert call_kwargs["timeout"] == 5
+
+    # 3. Mocking non-200 response (e.g. 403 Forbidden / 404 Not Found)
+    mock_err_resp = MagicMock()
+    mock_err_resp.status_code = 403
+    with patch("requests.get", return_value=mock_err_resp):
+        assert app.fetch_github_repos("octocat") == ""
+
+    # 4. Mocking network timeout / connection error
+    with patch("requests.get", side_effect=requests.exceptions.Timeout):
+        assert app.fetch_github_repos("octocat") == ""
+
+    print("✓ test_fetch_github_repos passed (offline & resilient)")
+
+def test_telemetry_isolated():
+    temp_dir = tempfile.mkdtemp()
+    tmp_db_path = os.path.join(temp_dir, "isolated_metrics.sqlite3")
+
+    original_db_path = app.DB_PATH
+    try:
+        app.DB_PATH = tmp_db_path
+        app.init_db()
+
+        app.log_event("test-session-audit", "parse", True)
+        app.log_event("test-session-audit", "optimize", True)
+        app.log_event("test-session-audit", "export_tex", True)
+        app.log_event("test-session-audit", "cover_letter", True)
+
+        counts = app.get_telemetry_counts()
+        assert counts["parse"] == 1
+        assert counts["optimize"] == 1
+        assert counts["export_tex"] == 1
+        assert counts["cover_letter"] == 1
+    finally:
+        app.DB_PATH = original_db_path
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+    print("✓ test_telemetry_isolated passed (isolated in temporary database)")
 
 def test_demo_quota_tracker():
-    rem_before = get_demo_remaining()
-    assert rem_before >= 0
-    print("✓ test_demo_quota_tracker passed")
+    tracker = app.get_demo_tracker()
+    with tracker["lock"]:
+        orig_count = tracker["count"]
+        orig_date = tracker.get("date")
+
+    try:
+        with tracker["lock"]:
+            tracker["count"] = 0
+            tracker["date"] = app.date.today().isoformat()
+
+        assert app.get_demo_remaining() == 50
+
+        # Test single increment
+        allowed, remaining = app.check_and_increment_demo()
+        assert allowed is True
+        assert remaining == 49
+        assert app.get_demo_remaining() == 49
+
+        # Test exhaustion cap at 50
+        with tracker["lock"]:
+            tracker["count"] = 50
+        assert app.get_demo_remaining() == 0
+        allowed_exhausted, remaining_exhausted = app.check_and_increment_demo()
+        assert allowed_exhausted is False
+        assert remaining_exhausted == 0
+        assert app.get_demo_remaining() == 0
+
+        # Test date rollover resets count
+        with tracker["lock"]:
+            tracker["date"] = "2000-01-01"
+        assert app.get_demo_remaining() == 50
+        allowed_new_day, remaining_new_day = app.check_and_increment_demo()
+        assert allowed_new_day is True
+        assert remaining_new_day == 49
+    finally:
+        with tracker["lock"]:
+            tracker["count"] = orig_count
+            tracker["date"] = orig_date
+
+    print("✓ test_demo_quota_tracker passed (isolated & fully verified)")
 
 if __name__ == "__main__":
     test_tex_escape()
@@ -185,6 +311,7 @@ if __name__ == "__main__":
     test_extract_tokens_and_coverage()
     test_render_latex_sanity()
     test_positional_optimization_mapping()
-    test_telemetry()
+    test_fetch_github_repos()
+    test_telemetry_isolated()
     test_demo_quota_tracker()
     print("\n🎉 ALL AUDIT & UNIT TESTS PASSED WITH 100% SUCCESS!")

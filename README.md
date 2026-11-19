@@ -90,7 +90,7 @@ TailorAI features a bespoke Editorial Ivory & Burgundy palette tailored for read
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/TailorAI-The-Opportunity-Equalizer.git
+   git clone https://github.com/md-washue/TailorAI-The-Opportunity-Equalizer.git
    cd TailorAI-The-Opportunity-Equalizer
    ```
 
