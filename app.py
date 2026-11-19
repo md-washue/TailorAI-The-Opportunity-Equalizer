@@ -35,7 +35,7 @@ load_dotenv()
 # Configuration & Constants
 # -----------------------------------------------------------------------------
 LOGO_PATH = Path("assets/logo.png")
-page_icon_obj = Image.open(LOGO_PATH) if LOGO_PATH.exists() else "✂️"
+page_icon_obj = Image.open(LOGO_PATH) if LOGO_PATH.exists() else None
 
 st.set_page_config(
     page_title="TailorAI — The Opportunity Equalizer",
@@ -142,16 +142,16 @@ def get_demo_remaining() -> int:
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
     html, body, [class*="css"] {
-        font-family: 'Newsreader', serif;
-        color: #242323;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--text-color);
     }
 
     h1, h2, h3, h4, .editorial-heading {
-        font-family: 'Fraunces', serif !important;
-        color: #803B4B !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        color: var(--primary-color) !important;
         font-weight: 600;
         letter-spacing: -0.02em;
     }
@@ -162,35 +162,35 @@ st.markdown(
 
     /* Primary buttons styling */
     .stButton > button[kind="primary"] {
-        background-color: #803B4B !important;
-        color: #F3EFE7 !important;
-        border: 1px solid #803B4B !important;
-        border-radius: 4px !important;
-        font-family: 'Fraunces', serif !important;
-        font-size: 1.05rem !important;
+        background-color: var(--primary-color) !important;
+        color: var(--background-color) !important;
+        border: 1px solid var(--primary-color) !important;
+        border-radius: 6px !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        font-size: 0.95rem !important;
         font-weight: 500 !important;
         padding: 0.5rem 1.2rem !important;
         transition: all 0.2s ease-in-out;
     }
     .stButton > button[kind="primary"]:hover {
-        background-color: #632b38 !important;
-        color: #FFFFFF !important;
-        border-color: #632b38 !important;
+        filter: brightness(1.1);
+        border-color: var(--primary-color) !important;
     }
 
     /* Secondary buttons */
     .stButton > button {
-        border-radius: 4px !important;
-        font-family: 'Newsreader', serif !important;
+        border-radius: 6px !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        font-size: 0.95rem !important;
     }
 
-    /* High-contrast Download buttons on warm ivory */
+    /* High-contrast Download buttons */
     .stDownloadButton > button {
-        background-color: #E8E3D9 !important;
-        color: #242323 !important;
-        border: 1px solid #803B4B !important;
-        border-radius: 4px !important;
-        font-family: 'Fraunces', serif !important;
+        background-color: var(--secondary-background-color) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--primary-color) !important;
+        border-radius: 6px !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
         font-size: 0.95rem !important;
         font-weight: 600 !important;
         padding: 0.5rem 1.1rem !important;
@@ -198,89 +198,93 @@ st.markdown(
         transition: all 0.2s ease-in-out;
     }
     .stDownloadButton > button:hover {
-        background-color: #803B4B !important;
-        color: #F3EFE7 !important;
+        background-color: var(--primary-color) !important;
+        color: var(--background-color) !important;
     }
 
     /* Card styling */
     .editorial-card {
-        background-color: #FAF8F5;
-        border: 1px solid #E8E3D9;
+        background-color: var(--secondary-background-color);
+        border: 1px solid rgba(128, 128, 128, 0.2);
         border-radius: 6px;
         padding: 1.4rem;
         margin-bottom: 1.2rem;
-        box-shadow: 0 1px 3px rgba(36, 35, 35, 0.04);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .diff-box-before {
-        background-color: #FDF1F0;
+        background-color: rgba(201, 74, 74, 0.12);
         border-left: 3px solid #C94A4A;
         padding: 0.8rem 1rem;
         border-radius: 0 4px 4px 0;
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.88rem;
-        color: #551A1A;
+        color: var(--text-color);
         margin-bottom: 0.6rem;
     }
 
     .diff-box-after {
-        background-color: #F0F6F1;
+        background-color: rgba(62, 138, 84, 0.12);
         border-left: 3px solid #3E8A54;
         padding: 0.8rem 1rem;
         border-radius: 0 4px 4px 0;
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.88rem;
-        color: #174221;
+        color: var(--text-color);
         margin-bottom: 0.6rem;
     }
 
     .badge-keyword {
         display: inline-block;
-        background-color: #E8E3D9;
-        color: #803B4B;
+        background-color: var(--secondary-background-color);
+        color: var(--primary-color);
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.82rem;
         font-weight: 600;
         padding: 0.2rem 0.55rem;
-        border-radius: 3px;
+        border-radius: 4px;
         margin: 0.2rem;
-        border: 1px solid #D8D2C6;
+        border: 1px solid rgba(128, 128, 128, 0.25);
     }
 
     .badge-missing {
         display: inline-block;
-        background-color: #F8EAEA;
-        color: #A33A3A;
+        background-color: rgba(201, 74, 74, 0.12);
+        color: #C94A4A;
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.82rem;
+        font-weight: 600;
         padding: 0.2rem 0.55rem;
-        border-radius: 3px;
+        border-radius: 4px;
         margin: 0.2rem;
-        border: 1px solid #EDD4D4;
+        border: 1px solid rgba(201, 74, 74, 0.3);
     }
 
     .stat-number {
-        font-family: 'Fraunces', serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 2.2rem;
         font-weight: 700;
-        color: #803B4B;
+        color: var(--primary-color);
         line-height: 1.1;
     }
 
     .stat-label {
-        font-family: 'Newsreader', serif;
-        font-size: 0.95rem;
-        color: #66635F;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--text-color);
+        opacity: 0.75;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
 
     .privacy-footer {
-        border-top: 1px solid #D8D2C6;
+        border-top: 1px solid rgba(128, 128, 128, 0.25);
         padding-top: 1.5rem;
         margin-top: 3rem;
         font-size: 0.88rem;
-        color: #6E6B66;
+        color: var(--text-color);
+        opacity: 0.75;
         text-align: center;
         line-height: 1.5;
     }
@@ -614,12 +618,12 @@ with st.sidebar:
 
     demo_mode = False
     if user_api_key:
-        st.success("⚡ Using your personal API key (Unlimited)")
+        st.success("Using your personal API key (Unlimited)")
         demo_mode = False
     elif server_key:
         demo_mode = True
         demo_remaining = get_demo_remaining()
-        st.info(f"🆓 **Free Mode Active** ({demo_remaining}/50 shared runs left today). Add your own key above for higher speed & limits.")
+        st.info(f"**Free Mode Active** ({demo_remaining}/50 shared runs left today). Add your own key above for higher speed & limits.")
     else:
         st.warning("No server key configured. Paste a free Google AI Studio key above.")
 
@@ -807,14 +811,14 @@ col_hero_1, col_hero_2 = st.columns([0.75, 0.25])
 with col_hero_1:
     st.markdown('<h1 style="margin-bottom: 0px;">TailorAI</h1>', unsafe_allow_html=True)
     st.markdown(
-        '<p style="font-size: 1.25rem; font-style: italic; color: #55514E; margin-top: 0px;">'
+        '<p style="font-size: 1.25rem; font-style: italic; color: var(--text-color); opacity: 0.85; margin-top: 0px;">'
         'The Opportunity Equalizer — Innovation shouldn’t depend on location.'
         '</p>',
         unsafe_allow_html=True,
     )
 with col_hero_2:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("⚡ Load Sample Profile & JD", type="primary", use_container_width=True):
+    if st.button("Load Sample Profile & JD", type="primary", use_container_width=True):
         clear_form_state()
         st.session_state["resume_data"] = copy.deepcopy(SAMPLE_RESUME)
         st.session_state["job_description"] = SAMPLE_JOB_DESCRIPTION
@@ -1023,7 +1027,7 @@ with tab_input:
                 st.success("Candidate profile updated in session state!")
                 st.rerun()
     else:
-        st.info("No resume loaded yet. Upload a PDF or click **'⚡ Load Sample Profile & JD'** above.")
+        st.info("No resume loaded yet. Upload a PDF or click **'Load Sample Profile & JD'** above.")
 
 # -----------------------------------------------------------------------------
 # TAB 2: Deterministic Tailoring & Diff
@@ -1305,7 +1309,7 @@ with tab_export:
             with col_exp_1:
                 st.markdown("#### **Direct Downloads**")
                 st.download_button(
-                    label="📄 Download Tailored_Resume.tex",
+                    label="Download Tailored_Resume.tex",
                     data=rendered_latex,
                     file_name="Tailored_Resume.tex",
                     mime="text/x-tex",
@@ -1313,7 +1317,7 @@ with tab_export:
                     on_click=handle_export_click,
                 )
                 st.download_button(
-                    label="📝 Download Tailored_Resume.txt (Plain Text)",
+                    label="Download Tailored_Resume.txt (Plain Text)",
                     data=rendered_plaintext,
                     file_name="Tailored_Resume.txt",
                     mime="text/plain",
@@ -1329,10 +1333,10 @@ with tab_export:
                         <input type="hidden" name="snip" value="{snip}">
                         <input type="hidden" name="snip_name" value="TailorAI_Resume.tex">
                         <button type="submit" style="
-                            background-color: #803B4B; color: #F3EFE7; border: 1px solid #803B4B;
-                            padding: 0.65rem 1.2rem; border-radius: 4px; font-family: 'Fraunces', serif;
-                            font-size: 1rem; cursor: pointer; width: 100%; font-weight: 600;
-                            box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: background-color 0.2s;
+                            background-color: var(--primary-color); color: var(--background-color); border: 1px solid var(--primary-color);
+                            padding: 0.65rem 1.2rem; border-radius: 6px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                            font-size: 0.95rem; cursor: pointer; width: 100%; font-weight: 600;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: all 0.2s;
                         ">Open & Compile in Overleaf ↗</button>
                     </form>
                     """
