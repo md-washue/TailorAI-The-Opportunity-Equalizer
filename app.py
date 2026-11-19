@@ -13,12 +13,14 @@ import copy
 import json
 import sqlite3
 import threading
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
 import requests
 import jinja2
 import pypdf
+from PIL import Image
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
@@ -32,9 +34,12 @@ load_dotenv()
 # -----------------------------------------------------------------------------
 # Configuration & Constants
 # -----------------------------------------------------------------------------
+LOGO_PATH = Path("assets/logo.png")
+page_icon_obj = Image.open(LOGO_PATH) if LOGO_PATH.exists() else "✂️"
+
 st.set_page_config(
     page_title="TailorAI — The Opportunity Equalizer",
-    page_icon="assets/logo.png" if Path("assets/logo.png").exists() else "✂️",
+    page_icon=page_icon_obj,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -104,15 +109,19 @@ def get_telemetry_counts() -> dict:
 init_db()
 
 # -----------------------------------------------------------------------------
-# Demo Rate-Limiting Counter (Thread-safe, capped at 50)
+# Demo Rate-Limiting Counter (Thread-safe daily tracker, capped at 50)
 # -----------------------------------------------------------------------------
 @st.cache_resource
 def get_demo_tracker():
-    return {"count": 0, "lock": threading.Lock()}
+    return {"count": 0, "date": date.today().isoformat(), "lock": threading.Lock()}
 
 def check_and_increment_demo() -> tuple[bool, int]:
     tracker = get_demo_tracker()
+    today = date.today().isoformat()
     with tracker["lock"]:
+        if tracker.get("date") != today:
+            tracker["date"] = today
+            tracker["count"] = 0
         if tracker["count"] < 50:
             tracker["count"] += 1
             return True, 50 - tracker["count"]
@@ -120,7 +129,11 @@ def check_and_increment_demo() -> tuple[bool, int]:
 
 def get_demo_remaining() -> int:
     tracker = get_demo_tracker()
+    today = date.today().isoformat()
     with tracker["lock"]:
+        if tracker.get("date") != today:
+            tracker["date"] = today
+            tracker["count"] = 0
         return max(0, 50 - tracker["count"])
 
 # -----------------------------------------------------------------------------
@@ -384,12 +397,15 @@ _TEX_ESCAPE_MAP = {
     "^": r"\textasciicircum{}",
 }
 
+_TEX_REGEX = re.compile(r"[\\&%$#_{}~^]")
+
 def tex_escape(val: str) -> str:
+    """Safely escapes LaTeX special characters without double-escaping curly braces."""
+    if val is None:
+        return ""
     if not isinstance(val, str):
         val = str(val)
-    for k, v in _TEX_ESCAPE_MAP.items():  # Backslash MUST be replaced first
-        val = val.replace(k, v)
-    return val
+    return _TEX_REGEX.sub(lambda m: _TEX_ESCAPE_MAP[m.group(0)], val)
 
 def render_latex(resume: ResumeModel, template_str: str) -> tuple[str, bool]:
     env = jinja2.Environment(
@@ -414,6 +430,8 @@ def render_latex(resume: ResumeModel, template_str: str) -> tuple[str, bool]:
 
 def render_plaintext(resume: ResumeModel) -> str:
     """Formats ResumeModel into clean, structured plain text."""
+    if not resume:
+        return ""
     lines = [
         resume.name.upper(),
         resume.contact_line,
@@ -448,6 +466,9 @@ def render_plaintext(resume: ResumeModel) -> str:
         lines.append(", ".join(resume.skills))
         lines.append("")
     return "\n".join(lines)
+
+# Canonical alias for resume formatting
+resume_to_text = render_plaintext
 
 # -----------------------------------------------------------------------------
 # Realistic Sample Data for Instant Judge Testing
@@ -529,7 +550,7 @@ Qualifications:
 """
 
 # -----------------------------------------------------------------------------
-# Session State Initialization
+# Session State Initialization & Form Reset Helper
 # -----------------------------------------------------------------------------
 if "session_id" not in st.session_state:
     st.session_state["session_id"] = str(uuid.uuid4())
@@ -555,12 +576,22 @@ if "cover_letter" not in st.session_state:
 if "github_username" not in st.session_state:
     st.session_state["github_username"] = ""
 
+def clear_form_state():
+    """Clears cached form widget inputs so newly loaded profiles render cleanly."""
+    for k in list(st.session_state.keys()):
+        if k.startswith("form_"):
+            del st.session_state[k]
+
+def handle_export_click():
+    """Logs the export event cleanly."""
+    log_event(st.session_state.get("session_id", "anonymous"), "export_tex", True)
+
 # -----------------------------------------------------------------------------
 # Sidebar: API Key, Demo Mode & Telemetry Status
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    if Path("assets/logo.png").exists():
-        st.image("assets/logo.png", width=120)
+    if LOGO_PATH.exists():
+        st.image(str(LOGO_PATH), width=120)
     
     st.markdown("### **TailorAI Studio**")
     st.caption("Deterministic ATS Optimizer & Editorial Resume Builder")
@@ -585,7 +616,7 @@ with st.sidebar:
             )
             st.caption(f"⚡ Demo Quota: **{demo_remaining}** of 50 runs remaining today")
         else:
-            st.info("💡 **Judge Note:** You can test the full UI, LaTeX compilation, and deterministic gap metrics using **'Load Sample Profile'** without an API key, or provide your Google AI Studio API key above for live Gemini LLM calls.")
+            st.info("💡 **Judge Note:** You can test the full UI, LaTeX compilation, and deterministic gap metrics using **'⚡ Load Sample Profile & JD'** without an API key, or provide your Google AI Studio API key above for live Gemini LLM calls.")
 
     active_key = user_api_key if user_api_key else (server_key if demo_mode else "")
 
@@ -613,15 +644,21 @@ with st.sidebar:
 # -----------------------------------------------------------------------------
 def extract_pdf_text(uploaded_file) -> str:
     """Extracts text from an uploaded PDF, capping at 3 pages maximum."""
-    reader = pypdf.PdfReader(uploaded_file)
-    max_pages = min(len(reader.pages), 3)
-    text_parts = []
-    for i in range(max_pages):
-        page_text = reader.pages[i].extract_text()
-        if page_text:
-            text_parts.append(page_text)
-    full_text = "\n".join(text_parts)
-    return full_text[:4000]
+    try:
+        if hasattr(uploaded_file, "seek"):
+            uploaded_file.seek(0)
+        reader = pypdf.PdfReader(uploaded_file)
+        max_pages = min(len(reader.pages), 3)
+        text_parts = []
+        for i in range(max_pages):
+            page_text = reader.pages[i].extract_text()
+            if page_text:
+                text_parts.append(page_text)
+        full_text = "\n".join(text_parts)
+        return full_text[:4000]
+    except Exception as e:
+        st.warning(f"Unable to parse PDF text: {e}")
+        return ""
 
 def fetch_github_repos(username: str) -> str:
     """Fetches up to 5 recently updated public repositories with 5s timeout."""
@@ -669,7 +706,6 @@ def call_gemini_optimization(
     resume: ResumeModel, jd_text: str, api_key: str
 ) -> Optional[OptimizationResult]:
     """Pass 2: Positional bullet optimization with prompt-injection defense."""
-    # Build indexed bullet manifest
     manifest_lines = []
     for i, exp in enumerate(resume.experience):
         for j, bullet in enumerate(exp.bullets):
@@ -681,6 +717,9 @@ def call_gemini_optimization(
             manifest_lines.append(
                 f"- section='projects', item_index={i}, bullet_index={j}, original='{bullet}'"
             )
+
+    if not manifest_lines:
+        return OptimizationResult(bullets=[])
 
     manifest_str = "\n".join(manifest_lines)
     safe_jd = jd_text[:4000]
@@ -719,11 +758,13 @@ Return an OptimizationResult containing rewritten bullets that naturally align w
     )
     return OptimizationResult.model_validate_json(response.text)
 
-def call_gemini_cover_letter(resume: ResumeModel, jd_text: str, api_key: str) -> str:
+def call_gemini_cover_letter(resume: Optional[ResumeModel], jd_text: str, api_key: str) -> str:
     """Stage 5 Stretch Goal: 1-Click Tailored Cover Letter."""
+    if not resume:
+        return ""
     client = genai.Client(api_key=api_key)
     safe_jd = jd_text[:4000]
-    resume_summary = resume_to_text(resume)
+    resume_summary = render_plaintext(resume)
 
     prompt = f"""You are a professional executive career strategist.
 Write a compelling, bespoke 3-paragraph cover letter tailored to the job description below.
@@ -750,7 +791,7 @@ Candidate Profile:
 # -----------------------------------------------------------------------------
 # Main Application Header & Hero
 # -----------------------------------------------------------------------------
-col_hero_1, col_hero_2 = st.columns([0.78, 0.22])
+col_hero_1, col_hero_2 = st.columns([0.75, 0.25])
 with col_hero_1:
     st.markdown('<h1 style="margin-bottom: 0px;">TailorAI</h1>', unsafe_allow_html=True)
     st.markdown(
@@ -762,6 +803,7 @@ with col_hero_1:
 with col_hero_2:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("⚡ Load Sample Profile & JD", type="primary", use_container_width=True):
+        clear_form_state()
         st.session_state["resume_data"] = copy.deepcopy(SAMPLE_RESUME)
         st.session_state["job_description"] = SAMPLE_JOB_DESCRIPTION
         st.session_state["github_username"] = "erostova"
@@ -784,7 +826,7 @@ st.markdown(
 )
 
 # -----------------------------------------------------------------------------
-# Stage 2 & 3: Input, Extraction & Verification (Pass 1)
+# Tabs: Ingestion & Verification, Tailoring & Diff, Compile & Export
 # -----------------------------------------------------------------------------
 tab_input, tab_optimize, tab_export = st.tabs([
     "1. Ingestion & Structured Review",
@@ -845,6 +887,7 @@ with tab_input:
                         try:
                             parsed_model = call_gemini_extraction(raw_text, active_key)
                             if parsed_model:
+                                clear_form_state()
                                 st.session_state["resume_data"] = parsed_model
                                 log_event(st.session_state["session_id"], "parse", True)
                                 st.success("Extraction complete! Review and refine below.")
@@ -880,19 +923,35 @@ with tab_input:
         with st.form("resume_review_form"):
             col_rev_1, col_rev_2 = st.columns([0.4, 0.6])
             with col_rev_1:
-                form_name = st.text_input("Full Name", value=current_resume.name)
+                form_name = st.text_input("Full Name", value=current_resume.name, key="form_user_name")
             with col_rev_2:
                 form_contact = st.text_input(
                     "Contact Line (Email | Phone | Location | Links)",
                     value=current_resume.contact_line,
+                    key="form_user_contact",
                 )
 
             form_skills = st.text_area(
                 "Technical Skills (comma-separated)",
                 value=", ".join(current_resume.skills),
                 help="Add or prune technical competencies.",
+                key="form_user_skills",
             )
 
+            # Education
+            st.markdown("#### **Education**")
+            edited_education = []
+            for i, edu in enumerate(current_resume.education):
+                c_e1, c_e2, c_e3 = st.columns([0.4, 0.4, 0.2])
+                with c_e1:
+                    e_inst = st.text_input(f"Institution {i+1}", value=edu.institution, key=f"form_edu_inst_{i}")
+                with c_e2:
+                    e_deg = st.text_input(f"Degree {i+1}", value=edu.degree, key=f"form_edu_deg_{i}")
+                with c_e3:
+                    e_dt = st.text_input(f"Dates {i+1}", value=edu.dates, key=f"form_edu_dates_{i}")
+                edited_education.append(EducationItem(institution=e_inst, degree=e_deg, dates=e_dt))
+
+            # Experience Bullets
             st.markdown("#### **Experience Bullets**")
             edited_experience = []
             for i, exp in enumerate(current_resume.experience):
@@ -914,6 +973,7 @@ with tab_input:
                     )
                 )
 
+            # Project Bullets
             st.markdown("#### **Project Bullets**")
             edited_projects = []
             for i, proj in enumerate(current_resume.projects):
@@ -942,7 +1002,7 @@ with tab_input:
                 st.session_state["resume_data"] = ResumeModel(
                     name=form_name,
                     contact_line=form_contact,
-                    education=current_resume.education,
+                    education=edited_education if edited_education else current_resume.education,
                     experience=edited_experience,
                     projects=edited_projects,
                     skills=updated_skills,
@@ -986,14 +1046,14 @@ with tab_optimize:
                         opt_result = call_gemini_optimization(base_resume, jd_text, active_key)
 
                         if opt_result and opt_result.bullets:
-                            # Apply updates positionally onto deep copy
                             tailored = copy.deepcopy(base_resume)
                             diff_records = []
 
                             for b in opt_result.bullets:
-                                if b.section == "experience" and b.item_index < len(tailored.experience):
+                                sec = b.section.lower().strip()
+                                if sec == "experience" and 0 <= b.item_index < len(tailored.experience):
                                     exp_item = tailored.experience[b.item_index]
-                                    if b.bullet_index < len(exp_item.bullets):
+                                    if 0 <= b.bullet_index < len(exp_item.bullets):
                                         orig = exp_item.bullets[b.bullet_index]
                                         exp_item.bullets[b.bullet_index] = b.improved
                                         diff_records.append({
@@ -1001,9 +1061,9 @@ with tab_optimize:
                                             "original": orig,
                                             "improved": b.improved,
                                         })
-                                elif b.section == "projects" and b.item_index < len(tailored.projects):
+                                elif sec == "projects" and 0 <= b.item_index < len(tailored.projects):
                                     proj_item = tailored.projects[b.item_index]
-                                    if b.bullet_index < len(proj_item.bullets):
+                                    if 0 <= b.bullet_index < len(proj_item.bullets):
                                         orig = proj_item.bullets[b.bullet_index]
                                         proj_item.bullets[b.bullet_index] = b.improved
                                         diff_records.append({
@@ -1140,21 +1200,37 @@ with tab_optimize:
             st.markdown("### **Stage 5 Stretch Goal: 1-Click Matching Cover Letter**")
             st.caption("Generates a sharp 3-paragraph executive cover letter drawing directly from your tailored achievements.")
 
+            active_for_cv = st.session_state.get("tailored_resume") or st.session_state.get("resume_data")
+
             if st.button("Generate Matching Cover Letter", type="secondary"):
                 if not active_key:
                     st.error("Please enter a Google AI Studio API key or enable Judge Demo Mode.")
+                elif not active_for_cv:
+                    st.warning("Please load or tailor a resume first.")
                 else:
+                    if demo_mode and not user_api_key:
+                        allowed, rem = check_and_increment_demo()
+                        if not allowed:
+                            st.error("Demo quota limit reached (50/50). Please use your personal Google AI Studio API Key in the sidebar.")
+                            st.stop()
+
                     with st.spinner("Drafting bespoke cover letter with gemini-2.5-flash..."):
                         try:
                             cv_text = call_gemini_cover_letter(
-                                st.session_state["tailored_resume"],
-                                st.session_state["job_description"],
+                                active_for_cv,
+                                st.session_state.get("job_description", ""),
                                 active_key,
                             )
                             st.session_state["cover_letter"] = cv_text
                             st.success("Cover letter ready!")
                         except Exception as e:
-                            st.error(f"Cover letter generation notice: {e}")
+                            err_str = str(e)
+                            if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
+                                st.warning("⚠️ **Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again.")
+                            elif "timeout" in err_str.lower() or "deadline" in err_str.lower():
+                                st.warning("⏳ **Request Timed Out:** Network connection took too long. Please retry.")
+                            else:
+                                st.error(f"Cover letter generation notice: {err_str}")
 
             if st.session_state.get("cover_letter"):
                 st.markdown(
@@ -1215,7 +1291,7 @@ with tab_export:
                     file_name="Tailored_Resume.tex",
                     mime="text/x-tex",
                     use_container_width=True,
-                    on_click=lambda: log_event(st.session_state["session_id"], "export_tex", True),
+                    on_click=handle_export_click,
                 )
                 st.download_button(
                     label="📝 Download Tailored_Resume.txt (Plain Text)",
