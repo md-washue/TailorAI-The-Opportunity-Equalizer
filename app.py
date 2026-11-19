@@ -666,7 +666,11 @@ def fetch_github_repos(username: str) -> str:
         return ""
     try:
         url = f"https://api.github.com/users/{username.strip()}/repos?sort=updated&per_page=5"
-        resp = requests.get(url, timeout=5)
+        resp = requests.get(
+            url,
+            headers={"User-Agent": "TailorAI-HackTheGap"},
+            timeout=5,
+        )
         if resp.status_code == 200:
             repos = resp.json()
             if repos:
@@ -1149,7 +1153,7 @@ with tab_optimize:
             with col_kw1:
                 st.markdown("##### **Newly Incorporated JD Keywords**")
                 if m["added_keywords"]:
-                    badges_html = "".join([f'<span class="badge-keyword">{k}</span>' for k in m["added_keywords"]])
+                    badges_html = "".join([f'<span class="badge-keyword">{html.escape(k, quote=True)}</span>' for k in m["added_keywords"]])
                     st.markdown(badges_html, unsafe_allow_html=True)
                 else:
                     st.caption("No new distinct keywords were required.")
@@ -1158,7 +1162,7 @@ with tab_optimize:
                 st.markdown("##### **Remaining Skill Gaps**")
                 if m["missing_keywords"]:
                     missing_sample = m["missing_keywords"][:16]
-                    badges_html = "".join([f'<span class="badge-missing">{k}</span>' for k in missing_sample])
+                    badges_html = "".join([f'<span class="badge-missing">{html.escape(k, quote=True)}</span>' for k in missing_sample])
                     st.markdown(badges_html, unsafe_allow_html=True)
                     if len(m["missing_keywords"]) > 16:
                         st.caption(f"+ {len(m['missing_keywords']) - 16} additional low-frequency terms.")
@@ -1172,13 +1176,16 @@ with tab_optimize:
             st.caption("Red denotes the baseline candidate bullet; green denotes the verified Action-Verb-quantified rewrite.")
 
             for item in st.session_state["diffs"]:
-                st.markdown(f"**{item['section']}**")
+                safe_sec = html.escape(item["section"], quote=True)
+                safe_orig = html.escape(item["original"], quote=True)
+                safe_impr = html.escape(item["improved"], quote=True)
+                st.markdown(f"**{safe_sec}**")
                 c_before, c_after = st.columns(2)
                 with c_before:
                     st.markdown(
                         f"""
                         <div class="diff-box-before">
-                            <strong>[BEFORE]</strong><br>{item['original']}
+                            <strong>[BEFORE]</strong><br>{safe_orig}
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1187,7 +1194,7 @@ with tab_optimize:
                     st.markdown(
                         f"""
                         <div class="diff-box-after">
-                            <strong>[AFTER / OPTIMIZED]</strong><br>{item['improved']}
+                            <strong>[AFTER / OPTIMIZED]</strong><br>{safe_impr}
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -1233,10 +1240,11 @@ with tab_optimize:
                                 st.error(f"Cover letter generation notice: {err_str}")
 
             if st.session_state.get("cover_letter"):
+                safe_cover_letter = html.escape(st.session_state["cover_letter"], quote=True)
                 st.markdown(
                     f"""
                     <div class="editorial-card" style="white-space: pre-line; font-size: 1rem; line-height: 1.6;">
-                    {st.session_state["cover_letter"]}
+                    {safe_cover_letter}
                     </div>
                     """,
                     unsafe_allow_html=True,
