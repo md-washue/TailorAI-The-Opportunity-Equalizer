@@ -587,7 +587,7 @@ def handle_export_click():
     log_event(st.session_state.get("session_id", "anonymous"), "export_tex", True)
 
 # -----------------------------------------------------------------------------
-# Sidebar: API Key, Demo Mode & Telemetry Status
+# Sidebar: AI Engine Access & Telemetry Status
 # -----------------------------------------------------------------------------
 with st.sidebar:
     if LOGO_PATH.exists():
@@ -597,26 +597,31 @@ with st.sidebar:
     st.caption("Deterministic ATS Optimizer & Editorial Resume Builder")
 
     st.markdown("---")
-    st.markdown("#### **Authentication**")
+    st.markdown("#### **AI Engine Access**")
     user_api_key = st.text_input(
-        "Google AI Studio API Key (BYOK)",
+        "Optional: Bring Your Own Gemini Key",
         type="password",
-        help="Enter your personal Gemini API key. Keys are held strictly in memory.",
+        placeholder="Leave blank to use Free Mode",
+        help="Adding a personal Google AI Studio key unlocks higher rate limits and priority speed. Keys are held strictly in memory.",
     )
 
-    demo_mode = False
     server_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not user_api_key:
-        if server_key:
-            demo_remaining = get_demo_remaining()
-            demo_mode = st.toggle(
-                "Judge Demo Mode",
-                value=True,
-                help=f"Uses shared rate-limited demo key. {demo_remaining}/50 daily runs remaining.",
-            )
-            st.caption(f"⚡ Demo Quota: **{demo_remaining}** of 50 runs remaining today")
-        else:
-            st.info("💡 **Judge Note:** You can test the full UI, LaTeX compilation, and deterministic gap metrics using **'⚡ Load Sample Profile & JD'** without an API key, or provide your Google AI Studio API key above for live Gemini LLM calls.")
+    if not server_key:
+        try:
+            server_key = str(st.secrets["GEMINI_API_KEY"]).strip()
+        except Exception:
+            server_key = ""
+
+    demo_mode = False
+    if user_api_key:
+        st.success("⚡ Using your personal API key (Unlimited)")
+        demo_mode = False
+    elif server_key:
+        demo_mode = True
+        demo_remaining = get_demo_remaining()
+        st.info(f"🆓 **Free Mode Active** ({demo_remaining}/50 shared runs left today). Add your own key above for higher speed & limits.")
+    else:
+        st.warning("No server key configured. Paste a free Google AI Studio key above.")
 
     active_key = user_api_key if user_api_key else (server_key if demo_mode else "")
 
@@ -882,7 +887,7 @@ with tab_input:
                         raw_text += gh_text
 
                 if not active_key:
-                    st.error("⚠️ An API key is required for live extraction. Please provide your Google AI Studio API key in the sidebar, or enable Judge Demo Mode.")
+                    st.error("⚠️ An API key is required for live extraction. Please provide your Google AI Studio API key in the sidebar, or use Free Mode.")
                 else:
                     if demo_mode and not user_api_key:
                         allowed, rem = check_and_increment_demo()
@@ -1038,7 +1043,7 @@ with tab_optimize:
 
         if optimize_btn:
             if not active_key:
-                st.error("⚠️ An API key is required for optimization. Enter your key in the sidebar or enable Judge Demo Mode.")
+                st.error("⚠️ An API key is required for optimization. Enter your key in the sidebar or use Free Mode.")
             else:
                 if demo_mode and not user_api_key:
                     allowed, rem = check_and_increment_demo()
@@ -1215,7 +1220,7 @@ with tab_optimize:
 
             if st.button("Generate Matching Cover Letter", type="secondary"):
                 if not active_key:
-                    st.error("Please enter a Google AI Studio API key or enable Judge Demo Mode.")
+                    st.error("Please enter a Google AI Studio API key or use Free Mode.")
                 elif not active_for_cv:
                     st.warning("Please load or tailor a resume first.")
                 else:

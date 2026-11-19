@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}\\tailor_venv\\Scripts\\python.exe",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}\\tailor_venv\\Lib\\site-packages",
+        "${workspaceFolder}\\.venv\\Lib\\site-packages"
+    ]
+}
