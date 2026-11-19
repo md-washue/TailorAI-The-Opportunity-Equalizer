@@ -35,6 +35,7 @@ load_dotenv()
 # Configuration & Constants
 # -----------------------------------------------------------------------------
 LOGO_PATH = Path("assets/logo.png")
+CSS_PATH = Path("assets/styles.css")
 page_icon_obj = Image.open(LOGO_PATH) if LOGO_PATH.exists() else None
 
 st.set_page_config(
@@ -137,161 +138,10 @@ def get_demo_remaining() -> int:
         return max(0, 50 - tracker["count"])
 
 # -----------------------------------------------------------------------------
-# Typography & Custom Editorial CSS
+# Typography & Custom Workspace CSS (Overleaf-style)
 # -----------------------------------------------------------------------------
-st.markdown(
-    """
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        color: var(--text-color);
-    }
-
-    h1, h2, h3, h4, .editorial-heading {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        color: var(--primary-color) !important;
-        font-weight: 600;
-        letter-spacing: -0.02em;
-    }
-
-    code, pre, .mono-text {
-        font-family: 'JetBrains Mono', monospace !important;
-    }
-
-    /* Primary buttons styling */
-    .stButton > button[kind="primary"] {
-        background-color: var(--primary-color) !important;
-        color: var(--background-color) !important;
-        border: 1px solid var(--primary-color) !important;
-        border-radius: 6px !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        font-size: 0.95rem !important;
-        font-weight: 500 !important;
-        padding: 0.5rem 1.2rem !important;
-        transition: all 0.2s ease-in-out;
-    }
-    .stButton > button[kind="primary"]:hover {
-        filter: brightness(1.1);
-        border-color: var(--primary-color) !important;
-    }
-
-    /* Secondary buttons */
-    .stButton > button {
-        border-radius: 6px !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        font-size: 0.95rem !important;
-    }
-
-    /* High-contrast Download buttons */
-    .stDownloadButton > button {
-        background-color: var(--secondary-background-color) !important;
-        color: var(--text-color) !important;
-        border: 1px solid var(--primary-color) !important;
-        border-radius: 6px !important;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        font-size: 0.95rem !important;
-        font-weight: 600 !important;
-        padding: 0.5rem 1.1rem !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        transition: all 0.2s ease-in-out;
-    }
-    .stDownloadButton > button:hover {
-        background-color: var(--primary-color) !important;
-        color: var(--background-color) !important;
-    }
-
-    /* Card styling */
-    .editorial-card {
-        background-color: var(--secondary-background-color);
-        border: 1px solid rgba(128, 128, 128, 0.2);
-        border-radius: 6px;
-        padding: 1.4rem;
-        margin-bottom: 1.2rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .diff-box-before {
-        background-color: rgba(201, 74, 74, 0.12);
-        border-left: 3px solid #C94A4A;
-        padding: 0.8rem 1rem;
-        border-radius: 0 4px 4px 0;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.88rem;
-        color: var(--text-color);
-        margin-bottom: 0.6rem;
-    }
-
-    .diff-box-after {
-        background-color: rgba(62, 138, 84, 0.12);
-        border-left: 3px solid #3E8A54;
-        padding: 0.8rem 1rem;
-        border-radius: 0 4px 4px 0;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.88rem;
-        color: var(--text-color);
-        margin-bottom: 0.6rem;
-    }
-
-    .badge-keyword {
-        display: inline-block;
-        background-color: var(--secondary-background-color);
-        color: var(--primary-color);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.82rem;
-        font-weight: 600;
-        padding: 0.2rem 0.55rem;
-        border-radius: 4px;
-        margin: 0.2rem;
-        border: 1px solid rgba(128, 128, 128, 0.25);
-    }
-
-    .badge-missing {
-        display: inline-block;
-        background-color: rgba(201, 74, 74, 0.12);
-        color: #C94A4A;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.82rem;
-        font-weight: 600;
-        padding: 0.2rem 0.55rem;
-        border-radius: 4px;
-        margin: 0.2rem;
-        border: 1px solid rgba(201, 74, 74, 0.3);
-    }
-
-    .stat-number {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: var(--primary-color);
-        line-height: 1.1;
-    }
-
-    .stat-label {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--text-color);
-        opacity: 0.75;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .privacy-footer {
-        border-top: 1px solid rgba(128, 128, 128, 0.25);
-        padding-top: 1.5rem;
-        margin-top: 3rem;
-        font-size: 0.88rem;
-        color: var(--text-color);
-        opacity: 0.75;
-        text-align: center;
-        line-height: 1.5;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+if CSS_PATH.exists():
+    st.markdown(f"<style>{CSS_PATH.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # Section 5: Data Contracts (Pydantic Schemas)
@@ -644,9 +494,9 @@ with st.sidebar:
     st.markdown("---")
     telemetry = get_telemetry_counts()
     st.markdown("#### **Live Telemetry**")
-    st.caption(f"✓ Resumes Parsed: **{telemetry['parse']}**")
-    st.caption(f"✓ Bullet Sets Tailored: **{telemetry['optimize']}**")
-    st.caption(f"✓ LaTeX Resumes Exported: **{telemetry['export_tex']}**")
+    st.caption(f"Resumes Parsed: **{telemetry['parse']}**")
+    st.caption(f"Bullet Sets Tailored: **{telemetry['optimize']}**")
+    st.caption(f"LaTeX Resumes Exported: **{telemetry['export_tex']}**")
 
 # -----------------------------------------------------------------------------
 # Input Processing Utilities (Guardrails Cap: 3 Pages / 4,000 Chars)
@@ -891,7 +741,7 @@ with tab_input:
                         raw_text += gh_text
 
                 if not active_key:
-                    st.error("⚠️ An API key is required for live extraction. Please provide your Google AI Studio API key in the sidebar, or use Free Mode.")
+                    st.error("An API key is required for live extraction. Please provide your Google AI Studio API key in the sidebar, or use Free Mode.")
                 else:
                     if demo_mode and not user_api_key:
                         allowed, rem = check_and_increment_demo()
@@ -912,11 +762,11 @@ with tab_input:
                             log_event(st.session_state["session_id"], "parse", False)
                             err_str = str(e)
                             if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
-                                st.warning("⚠️ **Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again, or enter your personal Google AI Studio API key in the sidebar.")
+                                st.warning("**Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again, or enter your personal Google AI Studio API key in the sidebar.")
                             elif "timeout" in err_str.lower() or "deadline" in err_str.lower():
-                                st.warning("⏳ **Request Timed Out:** Network connection took too long. Please retry.")
+                                st.warning("**Request Timed Out:** Network connection took too long. Please retry.")
                             else:
-                                st.error(f"⚠️ Extraction Notice: {err_str}")
+                                st.error(f"Extraction Notice: {err_str}")
 
     with col_in_2:
         st.markdown("### **Target Job Description**")
@@ -1047,7 +897,7 @@ with tab_optimize:
 
         if optimize_btn:
             if not active_key:
-                st.error("⚠️ An API key is required for optimization. Enter your key in the sidebar or use Free Mode.")
+                st.error("An API key is required for optimization. Enter your key in the sidebar or use Free Mode.")
             else:
                 if demo_mode and not user_api_key:
                     allowed, rem = check_and_increment_demo()
@@ -1106,11 +956,11 @@ with tab_optimize:
                         log_event(st.session_state["session_id"], "optimize", False)
                         err_str = str(e)
                         if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
-                            st.warning("⚠️ **Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again, or enter your personal Google AI Studio API key in the sidebar.")
+                            st.warning("**Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again, or enter your personal Google AI Studio API key in the sidebar.")
                         elif "timeout" in err_str.lower() or "deadline" in err_str.lower():
-                            st.warning("⏳ **Request Timed Out:** Network connection took too long. Please retry.")
+                            st.warning("**Request Timed Out:** Network connection took too long. Please retry.")
                         else:
-                            st.error(f"⚠️ Optimization Notice: {err_str}")
+                            st.error(f"Optimization Notice: {err_str}")
 
         # Display Metrics Dashboard
         if st.session_state.get("metrics"):
@@ -1248,9 +1098,9 @@ with tab_optimize:
                             log_event(st.session_state["session_id"], "cover_letter", False)
                             err_str = str(e)
                             if "429" in err_str or "quota" in err_str.lower() or "resource_exhausted" in err_str.lower():
-                                st.warning("⚠️ **Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again.")
+                                st.warning("**Rate Limit Reached (429):** The Gemini API is temporarily at capacity. Please wait 15 seconds and try again.")
                             elif "timeout" in err_str.lower() or "deadline" in err_str.lower():
-                                st.warning("⏳ **Request Timed Out:** Network connection took too long. Please retry.")
+                                st.warning("**Request Timed Out:** Network connection took too long. Please retry.")
                             else:
                                 st.error(f"Cover letter generation notice: {err_str}")
 
@@ -1295,9 +1145,9 @@ with tab_export:
             col_stat_1, col_stat_2 = st.columns([0.5, 0.5])
             with col_stat_1:
                 if is_valid:
-                    st.success("✓ LaTeX Compile Sanity Verified: Matching \\begin and \\end blocks.")
+                    st.success("LaTeX Compile Sanity Verified: Matching \\begin and \\end blocks.")
                 else:
-                    st.error("⚠️ LaTeX Compilation Warning: Tag mismatch detected.")
+                    st.error("LaTeX Compilation Warning: Tag mismatch detected.")
 
             with col_stat_2:
                 char_count = len(rendered_latex)

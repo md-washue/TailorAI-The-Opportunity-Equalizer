@@ -1,0 +1,167 @@
+/* ==========================================================================
+   TailorAI — Overleaf-Inspired LaTeX & ATS Workspace Stylesheet
+   Pure SaaS IDE Styling with Inter + JetBrains Mono and Dual-Theme Variables
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* Base Typography & Canvas */
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-color);
+}
+
+h1, h2, h3, h4, h5, .editorial-heading {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    color: var(--primary-color) !important;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+code, pre, .mono-text {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Primary Action Buttons (IDE Style) */
+.stButton > button[kind="primary"] {
+    background-color: var(--primary-color) !important;
+    color: var(--background-color) !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 6px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 1.2rem !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.stButton > button[kind="primary"]:hover {
+    filter: brightness(1.1);
+    border-color: var(--primary-color) !important;
+}
+
+/* Secondary & Tooling Buttons */
+.stButton > button {
+    border-radius: 6px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+    border: 1px solid rgba(128, 128, 128, 0.25) !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.stButton > button:hover {
+    border-color: var(--primary-color) !important;
+}
+
+/* High-Contrast Download Buttons */
+.stDownloadButton > button {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 6px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1.1rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s ease-in-out;
+}
+
+.stDownloadButton > button:hover {
+    background-color: var(--primary-color) !important;
+    color: var(--background-color) !important;
+}
+
+/* Overleaf-Style Document Card */
+.editorial-card {
+    background-color: var(--secondary-background-color);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 6px;
+    padding: 1.3rem;
+    margin-bottom: 1.2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Bullet Diffs (Semantic Red/Green with Clean Translucency) */
+.diff-box-before {
+    background-color: rgba(201, 74, 74, 0.12);
+    border-left: 3px solid #C94A4A;
+    padding: 0.8rem 1rem;
+    border-radius: 0 4px 4px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    color: var(--text-color);
+    margin-bottom: 0.6rem;
+    line-height: 1.5;
+}
+
+.diff-box-after {
+    background-color: rgba(62, 138, 84, 0.12);
+    border-left: 3px solid #3E8A54;
+    padding: 0.8rem 1rem;
+    border-radius: 0 4px 4px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    color: var(--text-color);
+    margin-bottom: 0.6rem;
+    line-height: 1.5;
+}
+
+/* ATS Keyword Badges */
+.badge-keyword {
+    display: inline-block;
+    background-color: var(--secondary-background-color);
+    color: var(--primary-color);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    margin: 0.2rem;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+}
+
+.badge-missing {
+    display: inline-block;
+    background-color: rgba(201, 74, 74, 0.12);
+    color: #C94A4A;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    margin: 0.2rem;
+    border: 1px solid rgba(201, 74, 74, 0.3);
+}
+
+/* Stat & Metrics Display */
+.stat-number {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.75;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Privacy Notice & Compliance Footer */
+.privacy-footer {
+    border-top: 1px solid rgba(128, 128, 128, 0.25);
+    padding-top: 1.5rem;
+    margin-top: 3rem;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.75;
+    text-align: center;
+    line-height: 1.5;
+}
