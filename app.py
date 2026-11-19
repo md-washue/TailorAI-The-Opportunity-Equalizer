@@ -662,10 +662,13 @@ def extract_pdf_text(uploaded_file) -> str:
 
 def fetch_github_repos(username: str) -> str:
     """Fetches up to 5 recently updated public repositories with 5s timeout."""
-    if not username or not username.strip():
+    if not username or not isinstance(username, str) or not username.strip():
+        return ""
+    clean_user = username.strip()
+    if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,38})$", clean_user):
         return ""
     try:
-        url = f"https://api.github.com/users/{username.strip()}/repos?sort=updated&per_page=5"
+        url = f"https://api.github.com/users/{clean_user}/repos?sort=updated&per_page=5"
         resp = requests.get(
             url,
             headers={"User-Agent": "TailorAI-HackTheGap"},
