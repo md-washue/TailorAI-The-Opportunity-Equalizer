@@ -4,6 +4,7 @@ Single-process, bug-proof, privacy-first ATS resume optimization platform.
 Target Event: Hack the Gap ("Innovation shouldn't depend on location")
 """
 
+import io
 import os
 import sys
 import re
@@ -50,6 +51,7 @@ def load_rounded_icon(path: Path, radius_ratio: float = 0.22) -> Optional[Image.
         return None
     try:
         img = Image.open(path).convert("RGBA")
+        img = img.resize((64, 64), Image.Resampling.LANCZOS)
         w, h = img.size
         radius = int(min(w, h) * radius_ratio)
         mask = Image.new("L", (w, h), 0)
@@ -68,8 +70,15 @@ def get_cached_rounded_icon():
 @st.cache_data
 def get_cached_logo_b64():
     if LOGO_PATH.exists():
-        with open(LOGO_PATH, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
+        try:
+            with Image.open(LOGO_PATH) as img:
+                img_resized = img.convert("RGBA").resize((96, 96), Image.Resampling.LANCZOS)
+                buf = io.BytesIO()
+                img_resized.save(buf, format="PNG", optimize=True)
+                return base64.b64encode(buf.getvalue()).decode("utf-8")
+        except Exception:
+            with open(LOGO_PATH, "rb") as f:
+                return base64.b64encode(f.read()).decode("utf-8")
     return ""
 
 @st.cache_data
@@ -142,6 +151,10 @@ def log_event(session_id: str, event_type: str, success: bool):
                 conn.close()
     except Exception:
         pass
+    try:
+        get_cached_telemetry_counts.clear()
+    except Exception:
+        pass
 
 def get_telemetry_counts() -> dict:
     counts = {"parse": 0, "optimize": 0, "export_tex": 0, "cover_letter": 0}
@@ -161,6 +174,10 @@ def get_telemetry_counts() -> dict:
     except Exception:
         pass
     return counts
+
+@st.cache_data(ttl=15)
+def get_cached_telemetry_counts() -> dict:
+    return get_telemetry_counts()
 
 @st.cache_resource
 def ensure_db_initialized():
@@ -1129,7 +1146,7 @@ with st.sidebar:
             """
         )
         st.markdown("---")
-        telemetry = get_telemetry_counts()
+        telemetry = get_cached_telemetry_counts()
         st.markdown("##### Live Telemetry")
         st.caption(f"Resumes Parsed: **{telemetry['parse']}**")
         st.caption(f"Bullet Sets Tailored: **{telemetry['optimize']}**")
