@@ -73,7 +73,7 @@ def get_cached_logo_b64():
     return ""
 
 @st.cache_data
-def get_cached_styles():
+def get_cached_styles(mtime: float):
     if CSS_PATH.exists():
         return CSS_PATH.read_text(encoding="utf-8")
     return ""
@@ -100,7 +100,7 @@ DB_LOCK = threading.Lock()
 TEMPLATE_PATH = Path("templates/master_resume.tex.j2")
 
 if "theme_mode" not in st.session_state:
-    st.session_state["theme_mode"] = "dark"
+    st.session_state["theme_mode"] = "light"
 
 if "view" not in st.session_state:
     st.session_state["view"] = "home"
@@ -200,7 +200,8 @@ def get_demo_remaining() -> int:
 # -----------------------------------------------------------------------------
 # Typography & Custom Workspace CSS (Overleaf-style Dual Theme Engine)
 # -----------------------------------------------------------------------------
-cached_css = get_cached_styles()
+css_mtime = CSS_PATH.stat().st_mtime if CSS_PATH.exists() else 0.0
+cached_css = get_cached_styles(css_mtime)
 if cached_css:
     st.markdown(f"<style>{cached_css}</style>", unsafe_allow_html=True)
 
@@ -232,19 +233,29 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    background-color: #2b2c37;
+    background-color: #e4e0d8;
     padding: 6px 14px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(36, 35, 35, 0.12);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 .switcher-wrap:hover {
-    border-color: #635fc7;
+    border-color: #803B4B;
 }
 body.light .switcher-wrap {
     background-color: #e4e0d8;
     border-color: rgba(36, 35, 35, 0.12);
+}
+body.light .switcher-wrap:hover {
+    border-color: #803B4B;
+}
+body.dark .switcher-wrap {
+    background-color: #2b2c37;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+body.dark .switcher-wrap:hover {
+    border-color: #A65D70;
 }
 .icon {
     display: flex;
@@ -265,10 +276,16 @@ body.light .switcher-wrap {
     position: relative;
     width: 44px;
     height: 22px;
-    background-color: #635fc7;
+    background-color: #803B4B;
     border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.2s ease;
+}
+body.light .switch-track {
+    background-color: #803B4B;
+}
+body.dark .switch-track {
+    background-color: #A65D70;
 }
 .switch-thumb {
     position: absolute;
@@ -281,17 +298,17 @@ body.light .switcher-wrap {
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
     transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
-/* In Dark Mode (Default): Thumb slides to right (22px) towards Moon */
+/* In Dark Mode: Thumb slides to right (22px) towards Moon */
 body.dark .switch-thumb {
     transform: translateX(22px);
 }
-/* In Light Mode: Thumb slides to left (0px) towards Sun */
+/* In Light Mode (Default): Thumb slides to left (0px) towards Sun */
 body.light .switch-thumb {
     transform: translateX(0px);
 }
 </style>
 </head>
-<body class="dark">
+<body class="light">
 <div class="switcher-wrap" id="themeSwitcher" title="Toggle Light / Dark Mode">
     <div class="icon sun-icon" id="sunBtn" title="Switch to Light Mode">
         <svg width="19" height="19" viewBox="0 0 19 19" xmlns="http://www.w3.org/2000/svg">
@@ -318,32 +335,32 @@ body.light .switch-thumb {
         try {
             if (window.parent && window.parent.document && window.parent.document.documentElement) {
                 return window.parent.document.documentElement.getAttribute('data-theme')
-                    || window.parent.localStorage.getItem('tailorai_theme')
-                    || 'dark';
+                    || window.parent.localStorage.getItem('tailorai_theme_v2')
+                    || 'light';
             }
         } catch(e) {}
         try {
-            return localStorage.getItem('tailorai_theme') || 'dark';
+            return localStorage.getItem('tailorai_theme_v2') || 'light';
         } catch(e) {}
-        return 'dark';
+        return 'light';
     }
 
     function applyTheme(theme) {
-        if (theme === 'light') {
-            body.classList.remove('dark');
-            body.classList.add('light');
-        } else {
+        if (theme === 'dark') {
             body.classList.remove('light');
             body.classList.add('dark');
+        } else {
+            body.classList.remove('dark');
+            body.classList.add('light');
         }
         try {
             if (window.parent && window.parent.document && window.parent.document.documentElement) {
                 window.parent.document.documentElement.setAttribute('data-theme', theme);
-                window.parent.localStorage.setItem('tailorai_theme', theme);
+                window.parent.localStorage.setItem('tailorai_theme_v2', theme);
             }
         } catch(e) {}
         try {
-            localStorage.setItem('tailorai_theme', theme);
+            localStorage.setItem('tailorai_theme_v2', theme);
         } catch(e) {}
     }
 
@@ -1053,7 +1070,7 @@ with st.sidebar:
 
     st.markdown("---")
     if st.button("+ New Project", type="primary", use_container_width=True, key="sidebar_btn_new_project"):
-        open_new_project_modal(active_key, demo_mode, cached_user_key)
+        st.session_state["open_new_project_flag"] = True
 
     st.markdown("#### **Project Files**")
     has_res = st.session_state.get("resume_data") is not None
@@ -1160,7 +1177,7 @@ if current_view == "home" or not has_project:
                     st.rerun()
             with c_btn_2:
                 if st.button("+ New Project", type="secondary", use_container_width=True, key="home_new_proj"):
-                    open_new_project_modal(active_key, demo_mode, user_api_key)
+                    st.session_state["open_new_project_flag"] = True
             with c_btn_3:
                 if st.button("Load Sample Project", type="secondary", use_container_width=True, key="home_sample_proj"):
                     clear_form_state()
@@ -1178,7 +1195,7 @@ if current_view == "home" or not has_project:
             c_btn_1, c_btn_2 = st.columns(2)
             with c_btn_1:
                 if st.button("+ New Project", type="primary", use_container_width=True, key="empty_state_new_proj"):
-                    open_new_project_modal(active_key, demo_mode, user_api_key)
+                    st.session_state["open_new_project_flag"] = True
             with c_btn_2:
                 if st.button("Load Sample Project", type="secondary", use_container_width=True, key="empty_state_sample_proj"):
                     clear_form_state()
@@ -1207,7 +1224,7 @@ else:
 
     with col_tb_2:
         if st.button("+ New", key="tb_new_project_btn", use_container_width=True):
-            open_new_project_modal(active_key, demo_mode, user_api_key)
+            st.session_state["open_new_project_flag"] = True
 
     with col_tb_3:
         tailor_recompile_btn = st.button(
@@ -1630,3 +1647,9 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+# -----------------------------------------------------------------------------
+# Root-Level Modal Triggers (Avoids Streamlit Dialog nesting/sidebar issues)
+# -----------------------------------------------------------------------------
+if st.session_state.pop("open_new_project_flag", False):
+    open_new_project_modal(active_key, demo_mode, user_api_key)

@@ -7,21 +7,10 @@
 
 /* ==========================================================================
    Dual-Theme Engine CSS Variables
-   Default: Dark Mode (:root, html[data-theme="dark"])
-   Alternate: Light Mode (html[data-theme="light"])
+   Default: Light Mode (:root, html[data-theme="light"])
+   Alternate: Dark Mode (html[data-theme="dark"])
    ========================================================================== */
-:root, html[data-theme="dark"] {
-    --primary-color: #A65D70;
-    --background-color: #1C1919;
-    --secondary-background-color: #302828;
-    --card-bg: #252020;
-    --text-color: #F3EFE7;
-    --muted-text: rgba(243, 239, 231, 0.72);
-    --border-color: rgba(243, 239, 231, 0.16);
-    --btn-primary-text: #1C1919;
-}
-
-html[data-theme="light"] {
+:root, html[data-theme="light"] {
     --primary-color: #803B4B;
     --background-color: #F3EFE7;
     --secondary-background-color: #E8E3D9;
@@ -30,6 +19,17 @@ html[data-theme="light"] {
     --muted-text: rgba(36, 35, 35, 0.72);
     --border-color: rgba(36, 35, 35, 0.16);
     --btn-primary-text: #F3EFE7;
+}
+
+html[data-theme="dark"] {
+    --primary-color: #A65D70;
+    --background-color: #1C1919;
+    --secondary-background-color: #302828;
+    --card-bg: #252020;
+    --text-color: #F3EFE7;
+    --muted-text: rgba(243, 239, 231, 0.72);
+    --border-color: rgba(243, 239, 231, 0.16);
+    --btn-primary-text: #1C1919;
 }
 
 /* Smooth Cross-Fade Theme Transitions (220ms) */
