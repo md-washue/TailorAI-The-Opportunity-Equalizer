@@ -44,7 +44,7 @@ TailorAI-The-Opportunity-Equalizer/
 Eliminates separate FastAPI/Node backends, dual-port synchronization, and CORS failures. All UI state, Gemini API calls, deterministic math, and telemetry logging execute inside a single Streamlit process (`app.py`).
 
 ### 2. Modern Google GenAI SDK (`google-genai`)
-Built strictly with the official modern SDK (`from google import genai` and `from google.genai import types`), pinned to `gemini-2.5-flash` for high-throughput, low-latency structured extraction.
+Built strictly with the official modern SDK (`from google import genai` and `from google.genai import types`), pinned to `gemini-3.8-flash` for high-throughput, low-latency structured extraction.
 
 ### 3. Pydantic Structured Contracts (No Raw LLM LaTeX)
 The LLM is never permitted to write or edit raw LaTeX directly. All Gemini passes return strict Pydantic models:

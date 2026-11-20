@@ -94,7 +94,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-3.8-flash"
 DB_PATH = "metrics.sqlite3"
 DB_LOCK = threading.Lock()
 TEMPLATE_PATH = Path("templates/master_resume.tex.j2")
@@ -724,7 +724,7 @@ def fetch_github_repos(username: str) -> str:
     return ""
 
 def call_gemini_extraction(raw_text: str, api_key: str) -> Optional[ResumeModel]:
-    """Pass 1: Structured resume extraction using gemini-2.5-flash."""
+    """Pass 1: Structured resume extraction using gemini-3.8-flash."""
     client = genai.Client(api_key=api_key)
     prompt = f"""You are a precise resume parser. Extract the structured resume information from the candidate text below into the required JSON schema.
 Ensure all accomplishment bullets, dates, technologies, education entries, and skills are extracted cleanly and categorized accurately.
@@ -889,7 +889,7 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
                         gh_text = fetch_github_repos(gh_input_pdf)
                         raw_text += gh_text
                 
-                with st.spinner("Analyzing candidate context with gemini-2.5-flash..."):
+                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}..."):
                     try:
                         parsed = call_gemini_extraction(raw_text, active_key)
                         if parsed:
@@ -937,7 +937,7 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
                         gh_text = fetch_github_repos(gh_input_paste)
                         raw_text += gh_text
                 
-                with st.spinner("Analyzing candidate context with gemini-2.5-flash..."):
+                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}..."):
                     try:
                         parsed = call_gemini_extraction(raw_text, active_key)
                         if parsed:
@@ -1579,7 +1579,7 @@ else:
                             st.error("Demo quota limit reached (50/50). Please use your personal Google AI Studio API Key in the sidebar.")
                             st.stop()
 
-                    with st.spinner("Drafting bespoke cover letter with gemini-2.5-flash..."):
+                    with st.spinner(f"Drafting bespoke cover letter with {MODEL_NAME}..."):
                         try:
                             cv_text = call_gemini_cover_letter(
                                 active_for_cv,

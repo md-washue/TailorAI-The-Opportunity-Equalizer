@@ -157,10 +157,20 @@ code, pre, .mono-text {
     background-color: transparent !important;
 }
 
+.stTabs [data-baseweb="tab"] p,
+.stTabs [data-baseweb="tab"] span {
+    color: var(--muted-text) !important;
+}
+
 .stTabs [aria-selected="true"] {
     color: var(--primary-color) !important;
     border-bottom: 2px solid var(--primary-color) !important;
     font-weight: 600 !important;
+}
+
+.stTabs [aria-selected="true"] p,
+.stTabs [aria-selected="true"] span {
+    color: var(--primary-color) !important;
 }
 
 /* Primary Action Buttons (IDE Style) */
@@ -220,6 +230,48 @@ button[data-testid="stBaseButton-secondary"]:hover,
 [data-testid="stDialog"] [role="dialog"] div[role="heading"],
 [data-testid="stDialog"] [role="dialog"] header {
     color: var(--text-color) !important;
+}
+
+[data-testid="stDialog"] p,
+[data-testid="stDialog"] label,
+[data-testid="stDialog"] [data-testid="stWidgetLabel"] p,
+[data-testid="stDialog"] [data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] {
+    color: var(--text-color) !important;
+}
+
+[data-testid="stDialog"] button[aria-label="Close"],
+[data-testid="stDialog"] button[aria-label="Close"] svg {
+    color: var(--text-color) !important;
+    fill: var(--text-color) !important;
+}
+
+/* File Uploader Dropzone and Chips (Dark & Light Mode) */
+[data-testid="stFileUploaderDropzone"] {
+    background-color: var(--card-bg) !important;
+    border: 1px dashed var(--border-color) !important;
+    color: var(--text-color) !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="stFileUploaderDropzone"] span,
+[data-testid="stFileUploaderDropzone"] small,
+[data-testid="stFileUploaderDropzone"] svg {
+    color: var(--text-color) !important;
+    fill: var(--text-color) !important;
+}
+
+[data-testid="stFileUploaderFile"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border-radius: 6px !important;
+}
+
+[data-testid="stFileUploaderFile"] span,
+[data-testid="stFileUploaderFile"] small,
+[data-testid="stFileUploaderFile"] svg {
+    color: var(--text-color) !important;
+    fill: var(--text-color) !important;
 }
 
 /* High-Contrast Download Buttons */
