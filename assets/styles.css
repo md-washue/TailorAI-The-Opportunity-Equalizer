@@ -22,6 +22,17 @@ code, pre, .mono-text {
     font-family: 'JetBrains Mono', monospace !important;
 }
 
+/* Compact Main Padding (Overleaf IDE Top Bar) */
+.block-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 98% !important;
+}
+
+[data-testid="StyledFullScreenButton"] {
+    display: none !important;
+}
+
 /* Primary Action Buttons (IDE Style) */
 .stButton > button[kind="primary"] {
     background-color: var(--primary-color) !important;
@@ -152,6 +163,109 @@ code, pre, .mono-text {
     opacity: 0.75;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Overleaf-Style Paper Preview Canvas */
+.paper-viewer {
+    background-color: var(--secondary-background-color);
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    border-radius: 8px;
+    padding: 24px;
+    overflow-y: auto;
+    max-height: 850px;
+    display: flex;
+    justify-content: center;
+}
+
+.paper-sheet {
+    background: #FFFFFF;
+    color: #1A1A1A;
+    padding: 32px 36px;
+    font-family: Georgia, 'Times New Roman', serif;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    border-radius: 2px;
+    width: 100%;
+    max-width: 780px;
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.paper-sheet h1 {
+    font-family: Georgia, 'Times New Roman', serif !important;
+    font-size: 1.7rem;
+    font-weight: 700;
+    text-align: center;
+    color: #1A1A1A !important;
+    margin-bottom: 4px;
+}
+
+.paper-sheet .paper-contact {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #444;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+}
+
+.paper-sheet .paper-section-title {
+    font-family: Georgia, 'Times New Roman', serif !important;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #1A1A1A !important;
+    border-bottom: 1px solid #222;
+    padding-bottom: 2px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+}
+
+.paper-sheet .paper-item-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-top: 6px;
+}
+
+.paper-sheet .paper-item-sub {
+    display: flex;
+    justify-content: space-between;
+    font-style: italic;
+    font-size: 0.88rem;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.paper-sheet ul {
+    margin-left: 18px;
+    margin-bottom: 8px;
+}
+
+.paper-sheet li {
+    font-size: 0.88rem;
+    margin-bottom: 3px;
+    color: #222;
+}
+
+.paper-sheet .paper-skills {
+    font-size: 0.88rem;
+    color: #222;
+    line-height: 1.4;
+}
+
+/* IDE Top Toolbar Breadcrumb */
+.ide-breadcrumb {
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.ide-breadcrumb span {
+    color: var(--primary-color);
 }
 
 /* Privacy Notice & Compliance Footer */
