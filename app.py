@@ -55,7 +55,31 @@ def load_rounded_icon(path: Path, radius_ratio: float = 0.22) -> Optional[Image.
     except Exception:
         return None
 
-page_icon_obj = load_rounded_icon(LOGO_PATH)
+@st.cache_resource
+def get_cached_rounded_icon():
+    return load_rounded_icon(LOGO_PATH)
+
+@st.cache_data
+def get_cached_logo_b64():
+    if LOGO_PATH.exists():
+        with open(LOGO_PATH, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    return ""
+
+@st.cache_data
+def get_cached_styles():
+    if CSS_PATH.exists():
+        return CSS_PATH.read_text(encoding="utf-8")
+    return ""
+
+@st.cache_data
+def get_cached_template():
+    if TEMPLATE_PATH.exists():
+        with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
+
+page_icon_obj = get_cached_rounded_icon()
 
 st.set_page_config(
     page_title="TailorAI — The Opportunity Equalizer",
@@ -69,8 +93,10 @@ DB_PATH = "metrics.sqlite3"
 DB_LOCK = threading.Lock()
 TEMPLATE_PATH = Path("templates/master_resume.tex.j2")
 
-# Initialize early state variables safely
-if "theme_mode" not in st.session_state:
+# Synchronize theme state before injecting styles for instant mode switching
+if "theme_toggle_widget" in st.session_state:
+    st.session_state["theme_mode"] = "dark" if st.session_state["theme_toggle_widget"] else "light"
+elif "theme_mode" not in st.session_state:
     st.session_state["theme_mode"] = "dark"
 
 if "view" not in st.session_state:
@@ -195,8 +221,9 @@ else:
     """
 
 st.markdown(f"<style>{theme_vars}</style>", unsafe_allow_html=True)
-if CSS_PATH.exists():
-    st.markdown(f"<style>{CSS_PATH.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+cached_css = get_cached_styles()
+if cached_css:
+    st.markdown(f"<style>{cached_css}</style>", unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # Section 5: Data Contracts (Pydantic Schemas)
@@ -807,10 +834,7 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
 # Sidebar: Workspace Navigation, Project Files, Auth & Telemetry
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    logo_b64 = ""
-    if LOGO_PATH.exists():
-        with open(LOGO_PATH, "rb") as f:
-            logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+    logo_b64 = get_cached_logo_b64()
 
     if logo_b64:
         st.markdown(
@@ -851,7 +875,7 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
 
-    col_logo, col_theme = st.columns([0.45, 0.55], vertical_alignment="center")
+    col_logo, col_theme = st.columns([0.28, 0.72], vertical_alignment="center")
     with col_logo:
         if st.button(" ", key="sidebar_logo_home_btn", help="Save progress and return to Home"):
             st.session_state["view"] = "home"
@@ -859,10 +883,13 @@ with st.sidebar:
 
     with col_theme:
         is_dark = st.session_state.get("theme_mode", "dark") == "dark"
-        toggle_label = "Light Mode" if is_dark else "Dark Mode"
-        if st.button(toggle_label, key="sidebar_theme_toggle", use_container_width=True):
-            st.session_state["theme_mode"] = "light" if is_dark else "dark"
-            st.rerun()
+        st.toggle(
+            "Dark Mode",
+            value=is_dark,
+            key="theme_toggle_widget",
+            label_visibility="collapsed",
+            help="Toggle Dark / Light Mode",
+        )
 
     st.markdown("### **TailorAI**")
     st.caption("LaTeX & ATS Workspace")
@@ -961,10 +988,7 @@ active_resume = st.session_state.get("tailored_resume") or st.session_state.get(
 candidate_name = active_resume.name if active_resume else "Resume"
 safe_filename = re.sub(r'[^a-zA-Z0-9_\-]', '_', candidate_name.strip()) or "Resume"
 
-template_str = ""
-if TEMPLATE_PATH.exists():
-    with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
-        template_str = f.read()
+template_str = get_cached_template()
 
 rendered_latex = ""
 is_valid_latex = False
