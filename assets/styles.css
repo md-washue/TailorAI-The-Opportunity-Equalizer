@@ -1,14 +1,39 @@
 /* ==========================================================================
    TailorAI — Overleaf-Inspired LaTeX & ATS Workspace Stylesheet
-   Pure SaaS IDE Styling with Inter + JetBrains Mono and Dual-Theme Variables
+   Pure SaaS IDE Styling with Inter + JetBrains Mono and Dual-Theme Engine
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-/* Base Typography & Canvas */
+/* Base Canvas & App Layout Bound to Theme Engine */
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--text-color);
+}
+
+.stApp,
+[data-testid="stAppViewContainer"] {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+}
+
+[data-testid="stHeader"] {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+}
+
+[data-testid="stSidebar"],
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+
+[data-testid="stDialog"] [role="dialog"] {
+    background-color: var(--background-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
 }
 
 h1, h2, h3, h4, h5, .editorial-heading {
@@ -33,19 +58,59 @@ code, pre, .mono-text {
     display: none !important;
 }
 
+/* Text Inputs, Text Areas & Selects */
+.stTextInput input,
+.stTextArea textarea {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-size: 0.92rem !important;
+}
+
+.stTextInput input:focus,
+.stTextArea textarea:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 1px var(--primary-color) !important;
+}
+
+/* Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+    background-color: transparent !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    gap: 0.5rem !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: var(--muted-text) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    padding: 0.5rem 1rem !important;
+    background-color: transparent !important;
+}
+
+.stTabs [aria-selected="true"] {
+    color: var(--primary-color) !important;
+    border-bottom: 2px solid var(--primary-color) !important;
+    font-weight: 600 !important;
+}
+
 /* Primary Action Buttons (IDE Style) */
 button[kind="primary"],
 button[data-testid="stBaseButton-primary"],
 .stButton > button[kind="primary"],
 .stButton > button[data-testid="stBaseButton-primary"] {
     background-color: var(--primary-color) !important;
-    color: var(--background-color) !important;
+    color: var(--btn-primary-text) !important;
     border: 1px solid var(--primary-color) !important;
     border-radius: 6px !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 0.92rem !important;
     font-weight: 500 !important;
     padding: 0.5rem 1.2rem !important;
+    white-space: nowrap !important;
     transition: all 0.2s ease-in-out;
 }
 
@@ -61,11 +126,14 @@ button[data-testid="stBaseButton-primary"]:hover,
 button[kind="secondary"],
 button[data-testid="stBaseButton-secondary"],
 .stButton > button {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
     border-radius: 6px !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     font-size: 0.92rem !important;
     font-weight: 500 !important;
-    border: 1px solid rgba(128, 128, 128, 0.25) !important;
+    border: 1px solid var(--border-color) !important;
+    white-space: nowrap !important;
     transition: all 0.2s ease-in-out;
 }
 
@@ -73,6 +141,7 @@ button[kind="secondary"]:hover,
 button[data-testid="stBaseButton-secondary"]:hover,
 .stButton > button:hover {
     border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
 }
 
 /* Dialog Header & Title Contrast (Dark & Light Mode) */
@@ -89,7 +158,7 @@ button[data-testid="stBaseButton-secondary"]:hover,
 
 /* High-Contrast Download Buttons */
 .stDownloadButton > button {
-    background-color: var(--secondary-background-color) !important;
+    background-color: var(--card-bg) !important;
     color: var(--text-color) !important;
     border: 1px solid var(--primary-color) !important;
     border-radius: 6px !important;
@@ -97,23 +166,36 @@ button[data-testid="stBaseButton-secondary"]:hover,
     font-size: 0.92rem !important;
     font-weight: 600 !important;
     padding: 0.5rem 1.1rem !important;
+    white-space: nowrap !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     transition: all 0.2s ease-in-out;
 }
 
 .stDownloadButton > button:hover {
     background-color: var(--primary-color) !important;
-    color: var(--background-color) !important;
+    color: var(--btn-primary-text) !important;
 }
 
 /* Overleaf-Style Document Card */
 .editorial-card {
-    background-color: var(--secondary-background-color);
-    border: 1px solid rgba(128, 128, 128, 0.2);
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
     border-radius: 6px;
     padding: 1.3rem;
     margin-bottom: 1.2rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Clean Status Banner (Translucent Burgundy Replaces Bright Blue) */
+.status-banner {
+    background-color: rgba(166, 93, 112, 0.14) !important;
+    border: 1px solid var(--primary-color) !important;
+    border-radius: 6px;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.86rem;
+    color: var(--text-color) !important;
+    line-height: 1.45;
+    margin: 0.6rem 0;
 }
 
 /* Bullet Diffs (Semantic Red/Green with Clean Translucency) */
@@ -152,7 +234,7 @@ button[data-testid="stBaseButton-secondary"]:hover,
     padding: 0.2rem 0.55rem;
     border-radius: 4px;
     margin: 0.2rem;
-    border: 1px solid rgba(128, 128, 128, 0.25);
+    border: 1px solid var(--border-color);
 }
 
 .badge-missing {
@@ -190,7 +272,7 @@ button[data-testid="stBaseButton-secondary"]:hover,
 /* Overleaf-Style Paper Preview Canvas */
 .paper-viewer {
     background-color: var(--secondary-background-color);
-    border: 1px solid rgba(128, 128, 128, 0.25);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 24px;
     overflow-y: auto;
@@ -285,6 +367,7 @@ button[data-testid="stBaseButton-secondary"]:hover,
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    white-space: nowrap;
 }
 .ide-breadcrumb span {
     color: var(--primary-color);
@@ -292,7 +375,7 @@ button[data-testid="stBaseButton-secondary"]:hover,
 
 /* Privacy Notice & Compliance Footer */
 .privacy-footer {
-    border-top: 1px solid rgba(128, 128, 128, 0.25);
+    border-top: 1px solid var(--border-color);
     padding-top: 1.5rem;
     margin-top: 3rem;
     font-size: 0.85rem;
