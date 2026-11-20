@@ -34,7 +34,10 @@ code, pre, .mono-text {
 }
 
 /* Primary Action Buttons (IDE Style) */
-.stButton > button[kind="primary"] {
+button[kind="primary"],
+button[data-testid="stBaseButton-primary"],
+.stButton > button[kind="primary"],
+.stButton > button[data-testid="stBaseButton-primary"] {
     background-color: var(--primary-color) !important;
     color: var(--background-color) !important;
     border: 1px solid var(--primary-color) !important;
@@ -46,12 +49,17 @@ code, pre, .mono-text {
     transition: all 0.2s ease-in-out;
 }
 
-.stButton > button[kind="primary"]:hover {
+button[kind="primary"]:hover,
+button[data-testid="stBaseButton-primary"]:hover,
+.stButton > button[kind="primary"]:hover,
+.stButton > button[data-testid="stBaseButton-primary"]:hover {
     filter: brightness(1.1);
     border-color: var(--primary-color) !important;
 }
 
 /* Secondary & Tooling Buttons */
+button[kind="secondary"],
+button[data-testid="stBaseButton-secondary"],
 .stButton > button {
     border-radius: 6px !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
@@ -61,8 +69,22 @@ code, pre, .mono-text {
     transition: all 0.2s ease-in-out;
 }
 
+button[kind="secondary"]:hover,
+button[data-testid="stBaseButton-secondary"]:hover,
 .stButton > button:hover {
     border-color: var(--primary-color) !important;
+}
+
+/* Dialog Header & Title Contrast (Dark & Light Mode) */
+[data-testid="stDialog"] h1,
+[data-testid="stDialog"] h2,
+[data-testid="stDialog"] div[role="heading"],
+[data-testid="stDialog"] header,
+[data-testid="stDialog"] [role="dialog"] h1,
+[data-testid="stDialog"] [role="dialog"] h2,
+[data-testid="stDialog"] [role="dialog"] div[role="heading"],
+[data-testid="stDialog"] [role="dialog"] header {
+    color: var(--text-color) !important;
 }
 
 /* High-Contrast Download Buttons */

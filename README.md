@@ -19,14 +19,15 @@ Candidates from non-elite regions often lack access to expensive executive coach
 
 ## 🏛️ System Architecture & Engineering Principles
 
-TailorAI is engineered with strict systems-level:
+TailorAI is engineered with strict systems-level guarantees:
 
 ```
 TailorAI-The-Opportunity-Equalizer/
 ├── .streamlit/
-│   └── config.toml            # Editorial Ivory/Burgundy theme configuration
+│   └── config.toml            # Dual-theme (Light/Dark) configuration & toolbar settings
 ├── assets/
-│   └── logo.png               # Circular needle-and-thread LaTeX emblem
+│   ├── logo.png               # Circular needle-and-thread LaTeX emblem
+│   └── styles.css             # Overleaf-style IDE typography, paper preview & button CSS
 ├── templates/
 │   └── master_resume.tex.j2   # Fixed, known-good LaTeX template with Jinja2 delimiters
 ├── tailor_venv/               # Local Python virtual environment (Git-ignored)
@@ -35,7 +36,7 @@ TailorAI-The-Opportunity-Equalizer/
 ├── AGENT.md                   # Master engineering specification
 ├── app.py                     # Single-process Streamlit application (UI + AI + Telemetry)
 ├── requirements.txt           # Pinned dependencies
-├── test_app.py                # Comprehensive test suite
+├── test_app.py                # Comprehensive test suite (9 audit & unit tests)
 └── README.md                  # Project documentation & submission story
 ```
 
@@ -70,7 +71,7 @@ Structured strings are escaped through a custom LaTeX filter (`tex_escape`) and 
 
 ### Prerequisites
 - Python 3.10+
-- A Google AI Studio API Key (or use **"⚡ Load Sample Profile & JD"** for instant testing)
+- A Google AI Studio API Key (or use Free Mode with shared runs, or 1-click **"Load Sample Project"**)
 
 ### Installation
 
@@ -97,7 +98,7 @@ Structured strings are escaped through a custom LaTeX filter (`tex_escape`) and 
    # .env
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
-   *(You can also input your key directly into the Streamlit sidebar BYOK password field).*
+   *(You can also input your key directly into the sidebar "Bring Your Own Gemini Key" field, or run instantly in Free Mode).*
 
 5. **Run the application:**
    ```bash
@@ -109,7 +110,7 @@ Structured strings are escaped through a custom LaTeX filter (`tex_escape`) and 
 
 ## 🧪 Running the Test Suite
 
-Verify all components (LaTeX escaping, Jinja2 template rendering, deterministic coverage math, and SQLite telemetry) by executing:
+Verify all components (LaTeX sanitization, Jinja2 template rendering, deterministic coverage math, GitHub URL normalization, SQL/XSS resilience, isolated telemetry, and demo quotas) by executing:
 
 ```bash
 python test_app.py
@@ -118,22 +119,31 @@ python test_app.py
 Expected output:
 ```text
 ✓ test_tex_escape passed
+✓ test_render_plaintext_and_alias passed
 ✓ test_extract_tokens_and_coverage passed
 ✓ test_render_latex_sanity passed
-✓ test_render_plaintext passed
-✓ test_telemetry passed
+✓ test_positional_optimization_mapping passed (all bounds & edge cases verified)
+✓ test_fetch_github_repos passed (offline & resilient)
+✓ test_telemetry_isolated passed (isolated in temporary database)
+✓ test_demo_quota_tracker passed (isolated & fully verified)
+✓ test_security_sql_and_xss_resilience passed (SQLi, XSS, and TeX injection verified)
 
-🎉 ALL TESTS PASSED!
+🎉 ALL AUDIT & UNIT TESTS PASSED WITH 100% SUCCESS!
 ```
 
 ---
 
 ## 🔬 Judge Evaluation Flow (5-Second Demo)
 
-If evaluating for **Hack the Gap**, follow these 3 steps:
+If evaluating for **Hack the Gap**, follow these quick steps:
 1. Launch the app (`streamlit run app.py`).
-2. Click **"⚡ Load Sample Profile & JD"** in the top hero. This loads Elena Rostova's full backend engineering profile and a realistic Senior Backend JD from Nexus Core Technologies.
-3. Switch to **Tab 2 (Deterministic Tailoring & Diff)** and click **"Run Deterministic Tailoring"** (or inspect the candidate form in Tab 1 and the compiled LaTeX in Tab 3).
+2. In the top toolbar or sidebar, click **"+ New Project"**.
+3. Select the **"Sample Project"** tab and click **"Load Sample Project"** (or use the "PDF + GitHub" / "Master Resume (Paste)" tabs to test custom candidate data). This loads Elena Rostova's full backend engineering profile and a realistic Senior Backend JD from Nexus Core Technologies.
+4. In the top toolbar, click **"Tailor & Recompile"**.
+5. Explore the active split-pane workspace:
+   - **Left Pane:** Inspect or tweak the **Target JD**, edit fields in the **Structured Editor**, or inspect raw syntax-highlighted LaTeX in **LaTeX (.tex)**.
+   - **Right Pane:** View the academic A4 resume in **Paper Preview**, review deterministic scores and keyword badges in **ATS Metrics & Diff**, or generate a custom **Cover Letter**.
+   - **Export:** Click **"Download .tex"** for the source file, or click **"Open in Overleaf ↗"** to launch the compiled, publication-ready PDF in a new Overleaf tab.
 
 ---
 
