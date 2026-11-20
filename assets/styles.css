@@ -5,6 +5,72 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
+/* ==========================================================================
+   Dual-Theme Engine CSS Variables
+   Default: Dark Mode (:root, html[data-theme="dark"])
+   Alternate: Light Mode (html[data-theme="light"])
+   ========================================================================== */
+:root, html[data-theme="dark"] {
+    --primary-color: #A65D70;
+    --background-color: #1C1919;
+    --secondary-background-color: #302828;
+    --card-bg: #252020;
+    --text-color: #F3EFE7;
+    --muted-text: rgba(243, 239, 231, 0.72);
+    --border-color: rgba(243, 239, 231, 0.16);
+    --btn-primary-text: #1C1919;
+}
+
+html[data-theme="light"] {
+    --primary-color: #803B4B;
+    --background-color: #F3EFE7;
+    --secondary-background-color: #E8E3D9;
+    --card-bg: #FAF8F5;
+    --text-color: #242323;
+    --muted-text: rgba(36, 35, 35, 0.72);
+    --border-color: rgba(36, 35, 35, 0.16);
+    --btn-primary-text: #F3EFE7;
+}
+
+/* Smooth Cross-Fade Theme Transitions (220ms) */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"],
+[data-testid="stSidebar"],
+[data-testid="stSidebarContent"],
+.editorial-card,
+.status-banner,
+.stButton > button,
+.stTextInput input,
+.stTextArea textarea {
+    transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease !important;
+}
+
+/* Soften Streamlit's stale-element overlay */
+[data-stale="true"] {
+    opacity: 0.92 !important;
+    transition: opacity 0.15s ease !important;
+}
+
+/* Sidebar inline code chips styling */
+[data-testid="stSidebar"] code {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    padding: 0.15rem 0.4rem !important;
+    border-radius: 4px !important;
+}
+
+/* Sidebar Component Iframe Cleanliness */
+[data-testid="stSidebar"] [data-testid="stCustomComponentV1"],
+[data-testid="stSidebar"] iframe {
+    border: none !important;
+    overflow: hidden !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 /* Base Canvas & App Layout Bound to Theme Engine */
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -385,96 +451,4 @@ button[data-testid="stBaseButton-secondary"]:hover,
     line-height: 1.5;
 }
 
-/* ==========================================================================
-   Modern SaaS Theme Switcher Pill (Kanban Style: Sun + Toggle + Moon)
-   ========================================================================== */
-.st-key-theme_toggle_widget {
-    background-color: var(--secondary-background-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 12px !important;
-    padding: 0 12px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    height: 48px !important;
-    min-height: 48px !important;
-    box-sizing: border-box !important;
-    transition: background-color 0.15s ease, border-color 0.15s ease !important;
-}
 
-.st-key-theme_toggle_widget:hover {
-    border-color: var(--primary-color) !important;
-}
-
-.st-key-theme_toggle_widget label[data-baseweb="checkbox"],
-.st-key-theme_toggle_widget label {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 12px !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    cursor: pointer !important;
-    height: 100% !important;
-}
-
-/* Hide default label text if present */
-.st-key-theme_toggle_widget [data-testid="stWidgetLabel"] {
-    display: none !important;
-}
-
-/* Sun Icon (Left) — 8-point gear star with center circle (#828FA3) */
-.st-key-theme_toggle_widget label[data-baseweb="checkbox"]::before,
-.st-key-theme_toggle_widget label::before {
-    content: "" !important;
-    display: inline-block !important;
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
-    min-height: 20px !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    background-image: url("data:image/svg+xml,%3Csvg width='19' height='19' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m9.222 2.667.632-1.778a.444.444 0 0 1 .834 0l.632 1.778c.38.118.736.29 1.058.508l1.642-.907a.444.444 0 0 1 .608.608l-.907 1.642c.217.322.39.678.508 1.058l1.778.632a.444.444 0 0 1 0 .834l-1.778.632a4.42 4.42 0 0 1-.508 1.058l.907 1.642a.444.444 0 0 1-.608.608l-1.642-.907a4.42 4.42 0 0 1-1.058.508l-.632 1.778a.444.444 0 0 1-.834 0l-.632-1.778a4.42 4.42 0 0 1-1.058-.508l-1.642.907a.444.444 0 0 1-.608-.608l.907-1.642a4.42 4.42 0 0 1-.508-1.058l-1.778-.632a.444.444 0 0 1 0-.834l1.778-.632c.118-.38.29-.736.508-1.058l-.907-1.642a.444.444 0 0 1 .608-.608l1.642.907c.322-.217.678-.39 1.058-.508Zm.778 4.222a2.222 2.222 0 1 0 0 4.444 2.222 2.222 0 0 0 0-4.444Z' fill='%23828FA3'/%3E%3C/svg%3E") !important;
-    transition: transform 0.2s ease, opacity 0.2s ease !important;
-}
-
-/* Moon Icon (Right) — Crescent moon (#828FA3) */
-.st-key-theme_toggle_widget label[data-baseweb="checkbox"]::after,
-.st-key-theme_toggle_widget label::after {
-    content: "" !important;
-    display: inline-block !important;
-    width: 17px !important;
-    height: 17px !important;
-    min-width: 17px !important;
-    min-height: 17px !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 8a8 8 0 1 0 16 0c0-1.058-.205-2.068-.578-2.993a.444.444 0 0 0-.677-.205 6.222 6.222 0 1 1-7.547-7.547.444.444 0 0 0-.205-.677A8.006 8.006 0 0 0 0 8Z' fill='%23828FA3'/%3E%3C/svg%3E") !important;
-    transition: transform 0.2s ease, opacity 0.2s ease !important;
-}
-
-/* Toggle Track Pill (#635fc7 / Purple-Indigo from Screenshot) */
-.st-key-theme_toggle_widget [data-baseweb="checkbox"] > div:first-of-type,
-.st-key-theme_toggle_widget input + div,
-.st-key-theme_toggle_widget input ~ div:not([data-testid="stWidgetLabel"]) {
-    background-color: #635fc7 !important;
-    border-color: #635fc7 !important;
-    width: 48px !important;
-    height: 24px !important;
-    min-width: 48px !important;
-    border-radius: 12px !important;
-    transition: background-color 0.2s ease !important;
-}
-
-/* Toggle Thumb (Solid White Circle Knob from Screenshot) */
-.st-key-theme_toggle_widget [data-baseweb="checkbox"] > div:first-of-type > div,
-.st-key-theme_toggle_widget input + div > div,
-.st-key-theme_toggle_widget input ~ div:not([data-testid="stWidgetLabel"]) > div {
-    background-color: #ffffff !important;
-    width: 18px !important;
-    height: 18px !important;
-    border-radius: 50% !important;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
-}

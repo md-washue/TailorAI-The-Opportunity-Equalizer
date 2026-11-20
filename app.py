@@ -26,11 +26,17 @@ from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 import streamlit as st
+import streamlit.components.v1 as components
 from google import genai
 from google.genai import types
 
-# Load local environment if present
-load_dotenv()
+# Load local environment if present (cached to prevent disk re-read on reruns)
+@st.cache_resource
+def ensure_env_loaded():
+    load_dotenv()
+    return True
+
+ensure_env_loaded()
 
 # -----------------------------------------------------------------------------
 # Configuration & Constants
@@ -93,10 +99,7 @@ DB_PATH = "metrics.sqlite3"
 DB_LOCK = threading.Lock()
 TEMPLATE_PATH = Path("templates/master_resume.tex.j2")
 
-# Synchronize theme state before injecting styles for instant mode switching
-if "theme_toggle_widget" in st.session_state:
-    st.session_state["theme_mode"] = "dark" if st.session_state["theme_toggle_widget"] else "light"
-elif "theme_mode" not in st.session_state:
+if "theme_mode" not in st.session_state:
     st.session_state["theme_mode"] = "dark"
 
 if "view" not in st.session_state:
@@ -159,7 +162,12 @@ def get_telemetry_counts() -> dict:
         pass
     return counts
 
-init_db()
+@st.cache_resource
+def ensure_db_initialized():
+    init_db()
+    return True
+
+ensure_db_initialized()
 
 # -----------------------------------------------------------------------------
 # Demo Rate-Limiting Counter (Thread-safe daily tracker, capped at 50)
@@ -192,38 +200,177 @@ def get_demo_remaining() -> int:
 # -----------------------------------------------------------------------------
 # Typography & Custom Workspace CSS (Overleaf-style Dual Theme Engine)
 # -----------------------------------------------------------------------------
-current_theme = st.session_state.get("theme_mode", "dark")
-if current_theme == "light":
-    theme_vars = """
-    :root {
-        --primary-color: #803B4B;
-        --background-color: #F3EFE7;
-        --secondary-background-color: #E8E3D9;
-        --card-bg: #FAF8F5;
-        --text-color: #242323;
-        --muted-text: rgba(36, 35, 35, 0.72);
-        --border-color: rgba(36, 35, 35, 0.16);
-        --btn-primary-text: #F3EFE7;
-    }
-    """
-else:
-    theme_vars = """
-    :root {
-        --primary-color: #A65D70;
-        --background-color: #1C1919;
-        --secondary-background-color: #302828;
-        --card-bg: #252020;
-        --text-color: #F3EFE7;
-        --muted-text: rgba(243, 239, 231, 0.72);
-        --border-color: rgba(243, 239, 231, 0.16);
-        --btn-primary-text: #1C1919;
-    }
-    """
-
-st.markdown(f"<style>{theme_vars}</style>", unsafe_allow_html=True)
 cached_css = get_cached_styles()
 if cached_css:
     st.markdown(f"<style>{cached_css}</style>", unsafe_allow_html=True)
+
+THEME_SWITCHER_HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* {
+    box-sizing: border-box;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.switcher-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: #2b2c37;
+    padding: 6px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.switcher-wrap:hover {
+    border-color: #635fc7;
+}
+body.light .switcher-wrap {
+    background-color: #e4e0d8;
+    border-color: rgba(36, 35, 35, 0.12);
+}
+.icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+.icon svg {
+    display: block;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.icon:hover svg {
+    transform: scale(1.1);
+}
+.switch-track {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    background-color: #635fc7;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* In Dark Mode (Default): Thumb slides to right (22px) towards Moon */
+body.dark .switch-thumb {
+    transform: translateX(22px);
+}
+/* In Light Mode: Thumb slides to left (0px) towards Sun */
+body.light .switch-thumb {
+    transform: translateX(0px);
+}
+</style>
+</head>
+<body class="dark">
+<div class="switcher-wrap" id="themeSwitcher" title="Toggle Light / Dark Mode">
+    <div class="icon sun-icon" id="sunBtn" title="Switch to Light Mode">
+        <svg width="19" height="19" viewBox="0 0 19 19" xmlns="http://www.w3.org/2000/svg">
+            <path d="m9.222 2.667.632-1.778a.444.444 0 0 1 .834 0l.632 1.778c.38.118.736.29 1.058.508l1.642-.907a.444.444 0 0 1 .608.608l-.907 1.642c.217.322.39.678.508 1.058l1.778.632a.444.444 0 0 1 0 .834l-1.778.632a4.42 4.42 0 0 1-.508 1.058l.907 1.642a.444.444 0 0 1-.608.608l-1.642-.907a4.42 4.42 0 0 1-1.058.508l-.632 1.778a.444.444 0 0 1-.834 0l-.632-1.778a4.42 4.42 0 0 1-1.058-.508l-1.642.907a.444.444 0 0 1-.608-.608l.907-1.642a4.42 4.42 0 0 1-.508-1.058l-1.778-.632a.444.444 0 0 1 0-.834l1.778-.632c.118-.38.29-.736.508-1.058l-.907-1.642a.444.444 0 0 1 .608-.608l1.642.907c.322-.217.678-.39 1.058-.508Zm.778 4.222a2.222 2.222 0 1 0 0 4.444 2.222 2.222 0 0 0 0-4.444Z" fill="#828FA3"/>
+        </svg>
+    </div>
+    <div class="switch-track" id="switchTrack">
+        <div class="switch-thumb"></div>
+    </div>
+    <div class="icon moon-icon" id="moonBtn" title="Switch to Dark Mode">
+        <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 8a8 8 0 1 0 16 0c0-1.058-.205-2.068-.578-2.993a.444.444 0 0 0-.677-.205 6.222 6.222 0 1 1-7.547-7.547.444.444 0 0 0-.205-.677A8.006 8.006 0 0 0 0 8Z" fill="#828FA3"/>
+        </svg>
+    </div>
+</div>
+<script>
+(function() {
+    const body = document.body;
+    const wrap = document.getElementById('themeSwitcher');
+    const sunBtn = document.getElementById('sunBtn');
+    const moonBtn = document.getElementById('moonBtn');
+
+    function getSavedTheme() {
+        try {
+            if (window.parent && window.parent.document && window.parent.document.documentElement) {
+                return window.parent.document.documentElement.getAttribute('data-theme')
+                    || window.parent.localStorage.getItem('tailorai_theme')
+                    || 'dark';
+            }
+        } catch(e) {}
+        try {
+            return localStorage.getItem('tailorai_theme') || 'dark';
+        } catch(e) {}
+        return 'dark';
+    }
+
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            body.classList.remove('dark');
+            body.classList.add('light');
+        } else {
+            body.classList.remove('light');
+            body.classList.add('dark');
+        }
+        try {
+            if (window.parent && window.parent.document && window.parent.document.documentElement) {
+                window.parent.document.documentElement.setAttribute('data-theme', theme);
+                window.parent.localStorage.setItem('tailorai_theme', theme);
+            }
+        } catch(e) {}
+        try {
+            localStorage.setItem('tailorai_theme', theme);
+        } catch(e) {}
+    }
+
+    let current = getSavedTheme();
+    applyTheme(current);
+
+    wrap.addEventListener('click', function(e) {
+        current = current === 'dark' ? 'light' : 'dark';
+        applyTheme(current);
+    });
+
+    sunBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        current = 'light';
+        applyTheme('light');
+    });
+
+    moonBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        current = 'dark';
+        applyTheme('dark');
+    });
+})();
+</script>
+</body>
+</html>
+"""
 
 # -----------------------------------------------------------------------------
 # Section 5: Data Contracts (Pydantic Schemas)
@@ -882,14 +1029,7 @@ with st.sidebar:
             st.rerun()
 
     with col_theme:
-        is_dark = st.session_state.get("theme_mode", "dark") == "dark"
-        st.toggle(
-            "Dark Mode",
-            value=is_dark,
-            key="theme_toggle_widget",
-            label_visibility="collapsed",
-            help="Toggle Dark / Light Mode",
-        )
+        components.html(THEME_SWITCHER_HTML, height=48)
 
     st.markdown("### **TailorAI**")
     st.caption("LaTeX & ATS Workspace")
