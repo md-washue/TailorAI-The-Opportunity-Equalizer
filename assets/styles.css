@@ -162,15 +162,50 @@ textarea::placeholder {
     color: var(--text-color) !important;
 }
 
+/* Sidebar Reopen / Expand / Collapse Control Buttons */
+[data-testid="stExpandSidebarButton"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"] {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-color) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+[data-testid="stExpandSidebarButton"]:hover,
+[data-testid="collapsedControl"]:hover,
+[data-testid="stSidebarCollapseButton"]:hover {
+    background-color: var(--secondary-background-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+[data-testid="stExpandSidebarButton"] button,
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapseButton"] button {
+    background-color: transparent !important;
+    border: none !important;
+    color: var(--text-color) !important;
+}
+
+[data-testid="stExpandSidebarButton"] svg,
+[data-testid="collapsedControl"] svg,
+[data-testid="stSidebarCollapseButton"] svg {
+    color: var(--text-color) !important;
+    fill: var(--text-color) !important;
+    stroke: var(--text-color) !important;
+}
+
 [data-testid="stTooltipIcon"] svg,
-[data-testid="stTooltipHoverTarget"] svg,
-[data-testid="stSidebarCollapseButton"] svg,
-[data-testid="collapsedControl"] svg {
+[data-testid="stTooltipHoverTarget"] svg {
     color: var(--muted-text) !important;
     stroke: var(--muted-text) !important;
 }
 
-/* Tabs Styling (Universal Role & Attribute Selectors) */
+/* Tabs Styling (High-Contrast Universal Role & Attribute Selectors, No Bare Asterisks) */
 [role="tablist"] {
     background-color: transparent !important;
     border-bottom: 1px solid var(--border-color) !important;
@@ -178,29 +213,50 @@ textarea::placeholder {
 }
 
 button[role="tab"],
-button[role="tab"] *,
+button[role="tab"] p,
+button[role="tab"] span,
+button[role="tab"] div,
 [data-baseweb="tab"],
-[data-baseweb="tab"] * {
+[data-baseweb="tab"] p,
+[data-baseweb="tab"] span,
+[data-baseweb="tab"] div {
     color: var(--muted-text) !important;
     opacity: 1 !important;
     font-family: 'Inter', sans-serif !important;
     font-weight: 500 !important;
-    font-size: 0.9rem !important;
+    font-size: 0.92rem !important;
     background-color: transparent !important;
 }
 
+html[data-theme="light"] button[role="tab"],
+html[data-theme="light"] button[role="tab"] p,
+html[data-theme="light"] button[role="tab"] span,
+html[data-theme="light"] [data-baseweb="tab"] p,
+html[data-theme="light"] [data-baseweb="tab"] span {
+    color: rgba(36, 35, 35, 0.78) !important;
+}
+
 button[role="tab"]:hover,
-button[role="tab"]:hover *,
+button[role="tab"]:hover p,
+button[role="tab"]:hover span,
+button[role="tab"]:hover div,
 [data-baseweb="tab"]:hover,
-[data-baseweb="tab"]:hover * {
+[data-baseweb="tab"]:hover p,
+[data-baseweb="tab"]:hover span,
+[data-baseweb="tab"]:hover div {
     color: var(--text-color) !important;
 }
 
 button[role="tab"][aria-selected="true"],
-button[role="tab"][aria-selected="true"] *,
+button[role="tab"][aria-selected="true"] p,
+button[role="tab"][aria-selected="true"] span,
+button[role="tab"][aria-selected="true"] div,
 [data-baseweb="tab"][aria-selected="true"],
-[data-baseweb="tab"][aria-selected="true"] * {
+[data-baseweb="tab"][aria-selected="true"] p,
+[data-baseweb="tab"][aria-selected="true"] span,
+[data-baseweb="tab"][aria-selected="true"] div {
     color: var(--primary-color) !important;
+    border-bottom: 2px solid var(--primary-color) !important;
     font-weight: 600 !important;
 }
 
@@ -435,6 +491,114 @@ button[data-testid="stBaseButton-secondary"]:hover {
     opacity: 0.75;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Code Status Bar */
+.code-status-bar {
+    font-size: 0.82rem;
+    color: var(--muted-text);
+    padding: 0.4rem 0.75rem;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 38px;
+    box-sizing: border-box;
+}
+
+/* Code Blocks Bound to Theme Engine (Overleaf-style split pane) */
+[data-testid="stCode"] {
+    background-color: var(--card-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    display: block !important;
+    box-sizing: border-box !important;
+}
+
+[data-testid="stCode"] > div {
+    background-color: transparent !important;
+}
+
+[data-testid="stCode"] pre {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.88rem !important;
+    line-height: 1.5 !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+}
+
+[data-testid="stCode"] code {
+    background-color: transparent !important;
+    color: var(--text-color) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Light Mode Overrides for Code Editor */
+html[data-theme="light"] [data-testid="stCode"],
+html[data-theme="light"] [data-testid="stCode"] pre,
+html[data-theme="light"] [data-testid="stCode"] code {
+    background-color: #FAF8F5 !important;
+    color: #242323 !important;
+}
+
+html[data-theme="light"] [data-testid="stCode"] span {
+    color: inherit;
+}
+
+/* Line Numbers Styling in Code Block */
+[data-testid="stCode"] .line-numbers-rows,
+[data-testid="stCode"] [class*="linenumber"] {
+    border-right: 1px solid var(--border-color) !important;
+    opacity: 0.6 !important;
+}
+
+html[data-theme="light"] [data-testid="stCode"] .line-numbers-rows > span:before,
+html[data-theme="light"] [data-testid="stCode"] [class*="linenumber"] {
+    color: rgba(36, 35, 35, 0.5) !important;
+}
+
+/* Copy Button on Code Block */
+[data-testid="stCode"] button {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 6px !important;
+}
+
+[data-testid="stCode"] button:hover {
+    background-color: var(--secondary-background-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+/* Alert Boxes Bound to Theme Engine (st.success, st.info, st.warning, st.error) */
+[data-testid="stAlert"] {
+    background-color: var(--card-bg) !important;
+    color: var(--text-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="stAlert"] p {
+    color: var(--text-color) !important;
+}
+
+html[data-theme="light"] [data-testid="stAlert"] {
+    background-color: #FAF8F5 !important;
+    border-color: rgba(36, 35, 35, 0.16) !important;
+}
+
+html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p {
+    color: #242323 !important;
 }
 
 /* Overleaf-Style Paper Preview Canvas */
@@ -701,7 +865,7 @@ html[data-theme="dark"] .stSpinner span[data-testid="stSpinnerIcon"] {
 [data-testid="stSpinner"] [data-testid="stMarkdownContainer"] p:last-child::after,
 [data-testid="stSpinner"] [role="status"] p:last-child::after,
 [data-testid="stSpinner"] p:last-child::after {
-    content: "" !important;
+    content: "";
     display: inline-block !important;
     width: 1.5em !important;
     text-align: left !important;

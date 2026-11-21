@@ -251,7 +251,10 @@ THEME_SYNC_SCRIPT = """
 css_mtime = CSS_PATH.stat().st_mtime if CSS_PATH.exists() else 0.0
 cached_css = get_cached_styles(css_mtime)
 if cached_css:
-    st.markdown(f"<style>{cached_css}</style>{THEME_SYNC_SCRIPT}", unsafe_allow_html=True)
+    try:
+        st.html(f"<style>{cached_css}</style>{THEME_SYNC_SCRIPT}")
+    except AttributeError:
+        st.markdown(f"<style>{cached_css}</style>{THEME_SYNC_SCRIPT}", unsafe_allow_html=True)
 
 THEME_SWITCHER_HTML = """
 <!DOCTYPE html>
@@ -294,19 +297,20 @@ html, body {
     max-width: 260px;
     height: 48px;
     border-radius: 6px;
-    border: none;
     cursor: pointer;
-    transition: background-color 0.18s ease;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
 }
-/* In Light Mode: Soft #F4F7FD Container */
+/* In Light Mode: Cream / Oatmeal Container with subtle border */
 html.light .switcher-wrap,
 body.light .switcher-wrap {
-    background-color: #F4F7FD;
+    background-color: #E2DCD1;
+    border: 1px solid rgba(36, 35, 35, 0.14);
 }
-/* In Dark Mode: Sleek #20212C Container */
+/* In Dark Mode: Deep Charcoal/Card Container with subtle border */
 html.dark .switcher-wrap,
 body.dark .switcher-wrap {
-    background-color: #20212C;
+    background-color: #252020;
+    border: 1px solid rgba(243, 239, 231, 0.14);
 }
 .icon {
     display: flex;
@@ -327,14 +331,24 @@ body.dark .switcher-wrap {
     position: relative;
     width: 40px;
     height: 20px;
-    background-color: #635FC7;
+    background-color: #803B4B;
     border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.18s ease;
 }
+html.dark .switch-track,
+body.dark .switch-track {
+    background-color: #A65D70;
+}
 .switch-track:hover,
 .switcher-wrap:hover .switch-track {
-    background-color: #A8A4FF;
+    background-color: #9E4D60;
+}
+html.dark .switch-track:hover,
+html.dark .switcher-wrap:hover .switch-track,
+body.dark .switch-track:hover,
+body.dark .switcher-wrap:hover .switch-track {
+    background-color: #BD7487;
 }
 .switch-thumb {
     position: absolute;
@@ -1477,24 +1491,25 @@ else:
         tab_latex, tab_editor, tab_jd = st.tabs(["Code (.tex)", "Visual Editor", "Target JD"])
 
         with tab_latex:
-            st.markdown("#### **LaTeX Source & Plain Text**")
-            if is_valid_latex:
-                st.success("LaTeX Compile Sanity Verified: Matching \\begin and \\end blocks.")
-            else:
-                st.error("LaTeX Compilation Warning: Tag mismatch detected.")
-
-            st.caption(f"Document Size: {len(rendered_latex):,} characters | Target Engine: pdfLaTeX / XeLaTeX")
-
-            st.download_button(
-                label="Download Plain Text (.txt)",
-                data=rendered_plaintext,
-                file_name=f"{safe_filename}_Tailored.txt",
-                mime="text/plain",
-                use_container_width=True,
-                key="tab_latex_download_txt",
-            )
-
-            st.code(rendered_latex, language="latex")
+            c_meta, c_txt = st.columns([0.72, 0.28], vertical_alignment="center")
+            with c_meta:
+                status_badge = "● Compiled" if is_valid_latex else "▲ Check Tags"
+                status_color = "#2E7D32" if is_valid_latex else "#C94A4A"
+                st.markdown(
+                    f'<div class="code-status-bar"><span style="color:{status_color}; font-weight:600;">{status_badge}</span>'
+                    f' &nbsp;·&nbsp; {len(rendered_latex):,} chars &nbsp;·&nbsp; pdfLaTeX / XeLaTeX</div>',
+                    unsafe_allow_html=True,
+                )
+            with c_txt:
+                st.download_button(
+                    label="Export .txt",
+                    data=rendered_plaintext,
+                    file_name=f"{safe_filename}_Tailored.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="tab_latex_download_txt",
+                )
+            st.code(rendered_latex, language="latex", line_numbers=True, wrap_lines=True)
 
         with tab_editor:
             st.markdown("#### **Structured Candidate Data**")
@@ -1704,7 +1719,7 @@ else:
                     else:
                         st.caption("100% token coverage achieved.")
             else:
-                st.info("Run **'Tailor & Recompile'** in the top toolbar to calculate deterministic ATS keyword coverage and diffs.")
+                st.info("Run **'Tailor & Compile'** in the top toolbar to calculate deterministic ATS keyword coverage and diffs.")
 
             if st.session_state.get("diffs"):
                 st.markdown("---")
