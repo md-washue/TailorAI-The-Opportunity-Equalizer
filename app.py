@@ -1158,6 +1158,33 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
             st.success("Sample project loaded into workspace!")
             st.rerun()
 
+@st.dialog("Target Job Description", width="large")
+def open_jd_modal():
+    """Modal dialog to view or paste the target job posting."""
+    st.caption("Paste the target role description, responsibilities, and required competencies.")
+    current_jd = st.session_state.get("job_description", "")
+    jd_val = st.text_area(
+        "Job Posting Description",
+        value=current_jd,
+        height=320,
+        placeholder="Paste full job description, required skills, qualification criteria, and responsibilities...",
+        key="modal_jd_textarea",
+        help="Caps at 4,000 characters for optimal ATS keyword extraction.",
+    )
+    char_count = len(jd_val)
+    st.caption(f"{char_count:,} / 4,000 characters")
+    c1, c2 = st.columns([0.65, 0.35], vertical_alignment="center")
+    with c1:
+        if current_jd.strip():
+            st.markdown('<span style="color:#2E7D32; font-size:0.85rem; font-weight:600;">● Active Job Description Set</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span style="color:#C94A4A; font-size:0.85rem; font-weight:600;">▲ No Job Description Set</span>', unsafe_allow_html=True)
+    with c2:
+        if st.button("Save Job Description", type="primary", use_container_width=True, key="modal_save_jd_btn"):
+            st.session_state["job_description"] = jd_val.strip()
+            st.success("Target Job Description saved!")
+            st.rerun()
+
 # -----------------------------------------------------------------------------
 # Sidebar: Workspace Navigation, Project Files, Auth & Telemetry
 # -----------------------------------------------------------------------------
@@ -1381,14 +1408,20 @@ if current_view == "home" or not has_project:
                     st.rerun()
 else:
     # Top IDE Toolbar (Self-Contained Overleaf-style Breadcrumbs & Actions)
-    col_tb_1, col_tb_2, col_tb_3, col_tb_4 = st.columns(
-        [0.44, 0.14, 0.22, 0.20],
+    has_target_jd = bool(st.session_state.get("job_description", "").strip())
+    jd_label = "● Target JD" if has_target_jd else "+ Target JD"
+
+    col_tb_1, col_tb_2, col_tb_3, col_tb_4, col_tb_5, col_tb_6 = st.columns(
+        [0.34, 0.09, 0.14, 0.17, 0.13, 0.13],
         vertical_alignment="center",
+        gap="small",
     )
 
     with col_tb_1:
+        status_dot = '<span style="color:#2E7D32;">●</span>' if is_valid_latex else '<span style="color:#C94A4A;">▲</span>'
         st.markdown(
-            f'<div class="ide-breadcrumb">TailorAI / <span title="{html.escape(safe_filename, quote=True)}.tex">{html.escape(safe_filename, quote=True)}.tex</span></div>',
+            f'<div class="ide-breadcrumb">{status_dot} TailorAI / '
+            f'<span title="{html.escape(safe_filename, quote=True)}.tex">{html.escape(safe_filename, quote=True)}.tex</span></div>',
             unsafe_allow_html=True,
         )
 
@@ -1397,6 +1430,10 @@ else:
             st.session_state["open_new_project_flag"] = True
 
     with col_tb_3:
+        if st.button(jd_label, key="tb_target_jd_btn", use_container_width=True):
+            st.session_state["open_jd_modal_flag"] = True
+
+    with col_tb_4:
         tailor_recompile_btn = st.button(
             "Tailor & Compile",
             type="primary",
@@ -1404,7 +1441,7 @@ else:
             use_container_width=True,
         )
 
-    with col_tb_4:
+    with col_tb_5:
         st.download_button(
             label="Download .tex",
             data=rendered_latex,
@@ -1416,14 +1453,27 @@ else:
             key="tb_download_tex_btn",
         )
 
-    st.markdown("---")
+    with col_tb_6:
+        st.download_button(
+            label="Export .txt",
+            data=rendered_plaintext,
+            file_name=f"{safe_filename}_Tailored.txt",
+            mime="text/plain",
+            disabled=not bool(rendered_plaintext),
+            use_container_width=True,
+            key="tb_download_txt_btn",
+        )
+
+    st.markdown('<div class="ide-divider"></div>', unsafe_allow_html=True)
 
     # Handle Tailor & Compile action
     if tailor_recompile_btn:
         if not st.session_state.get("resume_data"):
             st.warning("Please create or load a resume project first.")
         elif not st.session_state.get("job_description", "").strip():
-            st.warning("Please provide a target Job Description in the 'Target JD' tab before tailoring.")
+            st.session_state["open_jd_modal_flag"] = True
+            st.warning("Please provide a Target Job Description before tailoring. Opening Job Description window...")
+            st.rerun()
         elif not active_key:
             st.error("An API key is required for optimization. Enter your key in the sidebar or use Free Mode.")
         else:
@@ -1484,32 +1534,14 @@ else:
                 except Exception as e:
                     log_event(st.session_state["session_id"], "optimize", False)
                     handle_gemini_error(e, "Optimization", bool(user_api_key))
-    left_col, right_col = st.columns([0.48, 0.52], gap="medium")
+    left_col, right_col = st.columns([0.49, 0.51], gap="small")
 
     # Left Column: Inputs, Structured Editing & LaTeX Source
     with left_col:
         tab_latex, tab_editor, tab_jd = st.tabs(["Code (.tex)", "Visual Editor", "Target JD"])
 
         with tab_latex:
-            c_meta, c_txt = st.columns([0.72, 0.28], vertical_alignment="center")
-            with c_meta:
-                status_badge = "● Compiled" if is_valid_latex else "▲ Check Tags"
-                status_color = "#2E7D32" if is_valid_latex else "#C94A4A"
-                st.markdown(
-                    f'<div class="code-status-bar"><span style="color:{status_color}; font-weight:600;">{status_badge}</span>'
-                    f' &nbsp;·&nbsp; {len(rendered_latex):,} chars &nbsp;·&nbsp; pdfLaTeX / XeLaTeX</div>',
-                    unsafe_allow_html=True,
-                )
-            with c_txt:
-                st.download_button(
-                    label="Export .txt",
-                    data=rendered_plaintext,
-                    file_name=f"{safe_filename}_Tailored.txt",
-                    mime="text/plain",
-                    use_container_width=True,
-                    key="tab_latex_download_txt",
-                )
-            st.code(rendered_latex, language="latex", line_numbers=True, wrap_lines=True)
+            st.code(rendered_latex, language="latex", line_numbers=True, wrap_lines=False)
 
         with tab_editor:
             st.markdown("#### **Structured Candidate Data**")
@@ -1809,9 +1841,8 @@ else:
 st.markdown(
     """
     <div class="privacy-footer">
-        <strong>Privacy-First Architecture:</strong> No resume text or personal data is ever stored on our servers.<br>
-        Inputs are processed in-memory via Google Gemini and immediately discarded. Ephemeral telemetry logs anonymous event counts only.<br>
-        <em>Built for Hack the Gap — "Innovation shouldn't depend on location."</em>
+        <span><strong>Privacy-First Architecture:</strong> Zero personal data stored. Ephemeral in-memory processing via Google Gemini.</span>
+        <span><em>TailorAI — Built for Hack the Gap</em></span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -1822,3 +1853,6 @@ st.markdown(
 # -----------------------------------------------------------------------------
 if st.session_state.pop("open_new_project_flag", False):
     open_new_project_modal(active_key, demo_mode, user_api_key)
+
+if st.session_state.pop("open_jd_modal_flag", False):
+    open_jd_modal()

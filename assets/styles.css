@@ -120,9 +120,23 @@ code, pre, .mono-text {
 /* Compact Main Padding (Overleaf IDE Top Bar) */
 .block-container,
 [data-testid="stMainBlockContainer"] {
-    padding-top: 3.5rem !important;
-    padding-bottom: 2rem !important;
-    max-width: 98% !important;
+    padding-top: 2.35rem !important;
+    padding-bottom: 0.75rem !important;
+    padding-left: 1.15rem !important;
+    padding-right: 1.15rem !important;
+    max-width: 100% !important;
+}
+
+/* Tighten vertical stack gaps in the main workspace */
+[data-testid="stMainBlockContainer"] [data-testid="stVerticalBlock"] {
+    gap: 0.45rem !important;
+}
+
+.ide-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0.15rem 0 0.25rem 0;
+    width: 100%;
 }
 
 [data-testid="StyledFullScreenButton"] {
@@ -191,12 +205,29 @@ textarea::placeholder {
     color: var(--text-color) !important;
 }
 
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stExpandSidebarButton"] i,
+[data-testid="stExpandSidebarButton"] span,
 [data-testid="stExpandSidebarButton"] svg,
+[data-testid="collapsedControl"] [data-testid="stIconMaterial"],
+[data-testid="collapsedControl"] i,
+[data-testid="collapsedControl"] span,
 [data-testid="collapsedControl"] svg,
+[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarCollapseButton"] i,
+[data-testid="stSidebarCollapseButton"] span,
 [data-testid="stSidebarCollapseButton"] svg {
     color: var(--text-color) !important;
     fill: var(--text-color) !important;
     stroke: var(--text-color) !important;
+    opacity: 1 !important;
+}
+
+html[data-theme="light"] [data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
+html[data-theme="light"] [data-testid="collapsedControl"] [data-testid="stIconMaterial"],
+html[data-theme="light"] [data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"] {
+    color: #242323 !important;
+    opacity: 1 !important;
 }
 
 [data-testid="stTooltipIcon"] svg,
@@ -206,62 +237,81 @@ textarea::placeholder {
 }
 
 /* Tabs Styling (High-Contrast Universal Role & Attribute Selectors, No Bare Asterisks) */
+[data-testid="stTabs"] [role="tablist"],
 [role="tablist"] {
     background-color: transparent !important;
     border-bottom: 1px solid var(--border-color) !important;
-    gap: 0.5rem !important;
+    gap: 1.1rem !important;
+    margin-bottom: 0.35rem !important;
 }
 
-button[role="tab"],
-button[role="tab"] p,
-button[role="tab"] span,
-button[role="tab"] div,
+[data-testid="stTabs"] button,
+[data-testid="stTabs"] button p,
+[data-testid="stTabs"] button span,
+[data-testid="stTabs"] [data-testid="stMarkdownContainer"] p,
 [data-baseweb="tab"],
 [data-baseweb="tab"] p,
-[data-baseweb="tab"] span,
-[data-baseweb="tab"] div {
+[data-baseweb="tab"] span {
     color: var(--muted-text) !important;
     opacity: 1 !important;
     font-family: 'Inter', sans-serif !important;
     font-weight: 500 !important;
-    font-size: 0.92rem !important;
+    font-size: 0.86rem !important;
     background-color: transparent !important;
 }
 
-html[data-theme="light"] button[role="tab"],
-html[data-theme="light"] button[role="tab"] p,
-html[data-theme="light"] button[role="tab"] span,
+html[data-theme="light"] [data-testid="stTabs"] button,
+html[data-theme="light"] [data-testid="stTabs"] button p,
+html[data-theme="light"] [data-testid="stTabs"] button span,
+html[data-theme="light"] [data-testid="stTabs"] [data-testid="stMarkdownContainer"] p,
+html[data-theme="light"] [data-baseweb="tab"],
 html[data-theme="light"] [data-baseweb="tab"] p,
 html[data-theme="light"] [data-baseweb="tab"] span {
-    color: rgba(36, 35, 35, 0.78) !important;
+    color: #383434 !important;
+    opacity: 1 !important;
 }
 
-button[role="tab"]:hover,
-button[role="tab"]:hover p,
-button[role="tab"]:hover span,
-button[role="tab"]:hover div,
+[data-testid="stTabs"] button:hover,
+[data-testid="stTabs"] button:hover p,
+[data-testid="stTabs"] button:hover [data-testid="stMarkdownContainer"] p,
 [data-baseweb="tab"]:hover,
-[data-baseweb="tab"]:hover p,
-[data-baseweb="tab"]:hover span,
-[data-baseweb="tab"]:hover div {
+[data-baseweb="tab"]:hover p {
     color: var(--text-color) !important;
 }
 
-button[role="tab"][aria-selected="true"],
-button[role="tab"][aria-selected="true"] p,
-button[role="tab"][aria-selected="true"] span,
-button[role="tab"][aria-selected="true"] div,
+html[data-theme="light"] [data-testid="stTabs"] button:hover,
+html[data-theme="light"] [data-testid="stTabs"] button:hover p,
+html[data-theme="light"] [data-testid="stTabs"] button:hover [data-testid="stMarkdownContainer"] p,
+html[data-theme="light"] [data-baseweb="tab"]:hover,
+html[data-theme="light"] [data-baseweb="tab"]:hover p {
+    color: #111111 !important;
+}
+
+[data-testid="stTabs"] button[aria-selected="true"],
+[data-testid="stTabs"] button[aria-selected="true"] p,
+[data-testid="stTabs"] button[aria-selected="true"] span,
+[data-testid="stTabs"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p,
 [data-baseweb="tab"][aria-selected="true"],
 [data-baseweb="tab"][aria-selected="true"] p,
-[data-baseweb="tab"][aria-selected="true"] span,
-[data-baseweb="tab"][aria-selected="true"] div {
+[data-baseweb="tab"][aria-selected="true"] span {
     color: var(--primary-color) !important;
-    border-bottom: 2px solid var(--primary-color) !important;
     font-weight: 600 !important;
+}
+
+html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"],
+html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"] p,
+html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"] span,
+html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p,
+html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"],
+html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"] p,
+html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"] span {
+    color: #803B4B !important;
+    border-bottom: 2px solid #803B4B !important;
 }
 
 [data-baseweb="tab-highlight"] {
     background-color: var(--primary-color) !important;
+    height: 2px !important;
 }
 
 /* Primary Action Buttons (IDE Style) */
@@ -606,7 +656,7 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     background-color: var(--secondary-background-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 24px;
+    padding: 12px;
     overflow-y: auto;
     max-height: 85vh;
     display: block;
@@ -616,71 +666,71 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 .paper-sheet {
     background: #FFFFFF !important;
     color: #1A1A1A !important;
-    padding: 40px 48px;
+    padding: 24px 28px;
     margin: 0 auto;
     font-family: Georgia, 'Times New Roman', serif;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
     border-radius: 2px;
     width: 100%;
     max-width: 780px;
-    min-height: 1000px;
+    min-height: 900px;
     box-sizing: border-box;
-    font-size: 0.95rem;
-    line-height: 1.45;
+    font-size: 0.88rem;
+    line-height: 1.38;
 }
 
 .paper-sheet h1 {
     font-family: 'Times New Roman', Georgia, serif !important;
-    font-size: 1.8rem;
+    font-size: 1.35rem;
     font-weight: 700;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: #1A1A1A !important;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .paper-sheet .paper-contact {
     text-align: center;
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     color: #333333 !important;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
 }
 
 .paper-sheet .paper-section-title {
     font-family: 'Times New Roman', Georgia, serif !important;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     font-weight: 700;
     text-transform: uppercase;
     color: #1A1A1A !important;
     border-bottom: 1px solid #111111 !important;
     padding-bottom: 2px;
-    margin-top: 14px;
-    margin-bottom: 6px;
-    letter-spacing: 0.05em;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    letter-spacing: 0.04em;
 }
 
 .paper-sheet .paper-summary {
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.92rem;
+    font-size: 0.86rem;
     color: #222222 !important;
-    line-height: 1.45;
-    margin-top: 4px;
+    line-height: 1.38;
+    margin-top: 3px;
     margin-bottom: 6px;
     text-align: justify;
 }
 
 .paper-sheet .paper-skills-grid {
     display: grid;
-    grid-template-columns: 185px 1fr;
-    gap: 3px 14px;
+    grid-template-columns: 140px 1fr;
+    gap: 2px 10px;
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.92rem;
+    font-size: 0.86rem;
     color: #222222 !important;
-    line-height: 1.4;
-    margin-top: 4px;
+    line-height: 1.38;
+    margin-top: 3px;
     margin-bottom: 6px;
 }
 
@@ -700,10 +750,10 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 
 .paper-sheet .paper-skills {
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.92rem;
+    font-size: 0.86rem;
     color: #222222 !important;
-    line-height: 1.4;
-    margin-top: 4px;
+    line-height: 1.38;
+    margin-top: 3px;
     margin-bottom: 6px;
 }
 
@@ -712,7 +762,7 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     justify-content: space-between;
     align-items: baseline;
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     margin-top: 6px;
     color: #1A1A1A !important;
 }
@@ -735,14 +785,14 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     align-items: baseline;
     font-family: 'Times New Roman', Georgia, serif;
     font-style: italic;
-    font-size: 0.90rem;
+    font-size: 0.85rem;
     color: #333333 !important;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 .paper-sheet .paper-project-header {
-    font-size: 0.92rem;
-    margin-top: 8px;
+    font-size: 0.88rem;
+    margin-top: 6px;
     margin-bottom: 2px;
     color: #1A1A1A !important;
 }
@@ -759,18 +809,18 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 }
 
 .paper-sheet ul {
-    margin-left: 20px;
+    margin-left: 18px;
     margin-top: 2px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     padding-left: 0;
 }
 
 .paper-sheet li {
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.90rem;
+    font-size: 0.85rem;
     margin-bottom: 2px;
     color: #222222 !important;
-    line-height: 1.4;
+    line-height: 1.35;
 }
 
 /* IDE Top Toolbar Breadcrumb */
@@ -798,13 +848,15 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 /* Privacy Notice & Compliance Footer */
 .privacy-footer {
     border-top: 1px solid var(--border-color);
-    padding-top: 1.5rem;
-    margin-top: 3rem;
-    font-size: 0.85rem;
-    color: var(--text-color);
-    opacity: 0.75;
-    text-align: center;
-    line-height: 1.5;
+    padding-top: 0.6rem;
+    margin-top: 0.75rem;
+    font-size: 0.78rem;
+    color: var(--muted-text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 /* ==========================================================================
