@@ -452,39 +452,88 @@ button[data-testid="stBaseButton-secondary"]:hover {
 }
 
 .paper-sheet h1 {
-    font-family: Georgia, 'Times New Roman', serif !important;
-    font-size: 1.7rem;
+    font-family: 'Times New Roman', Georgia, serif !important;
+    font-size: 1.8rem;
     font-weight: 700;
     text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: #1A1A1A !important;
     margin-bottom: 4px;
 }
 
 .paper-sheet .paper-contact {
     text-align: center;
-    font-size: 0.82rem;
-    color: #444444 !important;
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 0.88rem;
+    color: #333333 !important;
     margin-bottom: 16px;
     padding-bottom: 8px;
 }
 
 .paper-sheet .paper-section-title {
-    font-family: Georgia, 'Times New Roman', serif !important;
+    font-family: 'Times New Roman', Georgia, serif !important;
     font-size: 0.95rem;
     font-weight: 700;
     text-transform: uppercase;
     color: #1A1A1A !important;
-    border-bottom: 1px solid #222222 !important;
+    border-bottom: 1px solid #111111 !important;
     padding-bottom: 2px;
-    margin-top: 16px;
-    margin-bottom: 8px;
+    margin-top: 14px;
+    margin-bottom: 6px;
     letter-spacing: 0.05em;
+}
+
+.paper-sheet .paper-summary {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 0.92rem;
+    color: #222222 !important;
+    line-height: 1.45;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    text-align: justify;
+}
+
+.paper-sheet .paper-skills-grid {
+    display: grid;
+    grid-template-columns: 185px 1fr;
+    gap: 3px 14px;
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 0.92rem;
+    color: #222222 !important;
+    line-height: 1.4;
+    margin-top: 4px;
+    margin-bottom: 6px;
+}
+
+.paper-sheet .paper-skill-row {
+    display: contents;
+}
+
+.paper-sheet .paper-skill-cat {
+    font-weight: 700;
+    color: #1A1A1A !important;
+    white-space: nowrap;
+}
+
+.paper-sheet .paper-skill-val {
+    color: #222222 !important;
+}
+
+.paper-sheet .paper-skills {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 0.92rem;
+    color: #222222 !important;
+    line-height: 1.4;
+    margin-top: 4px;
+    margin-bottom: 6px;
 }
 
 .paper-sheet .paper-item-header {
     display: flex;
     justify-content: space-between;
-    font-weight: 600;
+    align-items: baseline;
+    font-family: 'Times New Roman', Georgia, serif;
     font-size: 0.92rem;
     margin-top: 6px;
     color: #1A1A1A !important;
@@ -498,15 +547,19 @@ button[data-testid="stBaseButton-secondary"]:hover {
 .paper-sheet .paper-item-date {
     font-weight: 500;
     color: #333333 !important;
+    white-space: nowrap;
+    text-align: right;
 }
 
 .paper-sheet .paper-item-sub {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    font-family: 'Times New Roman', Georgia, serif;
     font-style: italic;
-    font-size: 0.88rem;
+    font-size: 0.90rem;
     color: #333333 !important;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .paper-sheet .paper-project-header {
@@ -528,18 +581,16 @@ button[data-testid="stBaseButton-secondary"]:hover {
 }
 
 .paper-sheet ul {
-    margin-left: 18px;
-    margin-bottom: 8px;
+    margin-left: 20px;
+    margin-top: 2px;
+    margin-bottom: 6px;
+    padding-left: 0;
 }
 
 .paper-sheet li {
-    font-size: 0.88rem;
-    margin-bottom: 3px;
-    color: #222222 !important;
-}
-
-.paper-sheet .paper-skills {
-    font-size: 0.88rem;
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 0.90rem;
+    margin-bottom: 2px;
     color: #222222 !important;
     line-height: 1.4;
 }

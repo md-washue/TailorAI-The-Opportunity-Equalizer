@@ -428,6 +428,10 @@ class EducationItem(BaseModel):
     degree: str
     dates: str
 
+class SkillCategory(BaseModel):
+    category: str = Field(description="Skill group label, e.g. 'Programming & Scripting'")
+    items: str = Field(description="Comma-separated skills in this category")
+
 class ExperienceItem(BaseModel):
     company: str = Field(description="Company or organization name")
     role: str = Field(description="Job title or role")
@@ -438,14 +442,18 @@ class ProjectItem(BaseModel):
     name: str = Field(description="Project title")
     tech_stack: str = Field(description="Comma-separated technologies used")
     bullets: list[str] = Field(description="Up to 3-5 measurable technical bullet points")
+    dates: str = Field(default="", description="Completion date or range, e.g. 'September 2026'")
 
 class ResumeModel(BaseModel):
     name: str
     contact_line: str = Field(description="Email, phone, location, GitHub/LinkedIn separated by |")
+    summary: str = Field(default="", description="Concise 2-3 sentence professional summary")
     education: list[EducationItem]
     experience: list[ExperienceItem]
     projects: list[ProjectItem]
     skills: list[str] = Field(description="Flat list of technical skills and tools")
+    skill_categories: list[SkillCategory] = Field(default_factory=list, description="Categorized technical skills matching a 2-column table")
+    certifications: list[str] = Field(default_factory=list, description="Certifications, awards, and honors")
 
 class IndexedBullet(BaseModel):
     section: str = Field(description="Either 'experience' or 'projects'")
@@ -569,6 +577,11 @@ def render_plaintext(resume: ResumeModel) -> str:
         "=" * 60,
         "",
     ]
+    if getattr(resume, "summary", ""):
+        lines.append("PERSONAL SUMMARY")
+        lines.append("-" * 20)
+        lines.append(resume.summary.strip())
+        lines.append("")
     if resume.education:
         lines.append("EDUCATION")
         lines.append("-" * 20)
@@ -587,7 +600,10 @@ def render_plaintext(resume: ResumeModel) -> str:
         lines.append("PROJECTS")
         lines.append("-" * 20)
         for proj in resume.projects:
-            lines.append(f"{proj.name} [{proj.tech_stack}]")
+            proj_header = f"{proj.name} [{proj.tech_stack}]"
+            if getattr(proj, "dates", ""):
+                proj_header += f" ({proj.dates})"
+            lines.append(proj_header)
             for b in proj.bullets:
                 lines.append(f"  • {b}")
             lines.append("")
@@ -595,6 +611,12 @@ def render_plaintext(resume: ResumeModel) -> str:
         lines.append("TECHNICAL SKILLS")
         lines.append("-" * 20)
         lines.append(", ".join(resume.skills))
+        lines.append("")
+    if getattr(resume, "certifications", None):
+        lines.append("CERTIFICATIONS & AWARDS")
+        lines.append("-" * 20)
+        for cert in resume.certifications:
+            lines.append(f"  • {cert}")
         lines.append("")
     return "\n".join(lines)
 
@@ -851,7 +873,8 @@ def call_gemini_extraction(raw_text: str, api_key: str) -> Optional[ResumeModel]
     """Pass 1: Structured resume extraction using Gemini with automatic fallback resilience."""
     client = genai.Client(api_key=api_key)
     prompt = f"""You are a precise resume parser. Extract the structured resume information from the candidate text below into the required JSON schema.
-Ensure all accomplishment bullets, dates, technologies, education entries, and skills are extracted cleanly and categorized accurately.
+Ensure all accomplishment bullets, dates (including for projects), technologies, education entries, and skills are extracted cleanly and categorized accurately.
+Populate summary, skill_categories (in addition to the flat skills list for deterministic ATS keyword math), projects[].dates, and certifications whenever present or derivable from the candidate text.
 
 Candidate Raw Text:
 {raw_text[:4000]}
@@ -918,36 +941,49 @@ Target Job Description:
     return response.text
 
 def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
-    """Renders a high-fidelity visual paper preview mimicking an academic/ATS compiled LaTeX page."""
+    """Renders a high-fidelity visual paper preview matching Trey Hunner's Medium Length CV format."""
     if not resume:
         return '<div class="paper-viewer"><div class="paper-sheet" style="text-align: center; color: #666;"><p>No resume document loaded.</p></div></div>'
     
-    name_safe = html.escape(resume.name or "Untitled Resume", quote=True)
-    contact_safe = html.escape(resume.contact_line or "", quote=True)
+    clean_name = " ".join(str(resume.name or "Untitled Resume").split())
+    name_safe = html.escape(clean_name, quote=True).upper()
+    clean_contact = " ".join(str(resume.contact_line or "").split())
+    contact_safe = html.escape(clean_contact, quote=True)
     
-    edu_html_list = []
-    for edu in (resume.education or []):
-        inst_safe = html.escape(edu.institution or "", quote=True)
-        deg_safe = html.escape(edu.degree or "", quote=True)
-        dt_safe = html.escape(edu.dates or "", quote=True)
-        edu_html_list.append(
-            f'<div class="paper-item-header"><span class="paper-item-title">{inst_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
-            f'<div class="paper-item-sub"><span>{deg_safe}</span></div>'
-        )
-    edu_section = ""
-    if edu_html_list:
-        edu_section = f'<div class="paper-section-title">Education</div>' + "".join(edu_html_list)
-        
+    summary_section = ""
+    if getattr(resume, "summary", ""):
+        clean_sum = " ".join(str(resume.summary or "").split())
+        if clean_sum:
+            summary_section = f'<div class="paper-section-title">Personal Summary</div><div class="paper-summary">{html.escape(clean_sum, quote=True)}</div>'
+    
+    skills_section = ""
+    if getattr(resume, "skill_categories", None):
+        cat_rows = []
+        for sc in resume.skill_categories:
+            cat_name = html.escape(" ".join(str(sc.category or "").split()), quote=True)
+            cat_items = html.escape(" ".join(str(sc.items or "").split()), quote=True)
+            if cat_name or cat_items:
+                cat_rows.append(
+                    f'<div class="paper-skill-row"><span class="paper-skill-cat">{cat_name}:</span><span class="paper-skill-val">{cat_items}</span></div>'
+                )
+        if cat_rows:
+            skills_section = f'<div class="paper-section-title">Skills</div><div class="paper-skills-grid">{"".join(cat_rows)}</div>'
+    elif resume.skills:
+        clean_skills = [html.escape(" ".join(str(s).split()), quote=True) for s in resume.skills if str(s).strip()]
+        if clean_skills:
+            skills_section = f'<div class="paper-section-title">Skills</div><div class="paper-skills">{", ".join(clean_skills)}</div>'
+            
     exp_html_list = []
     for exp in (resume.experience or []):
-        co_safe = html.escape(exp.company or "", quote=True)
-        role_safe = html.escape(exp.role or "", quote=True)
-        dt_safe = html.escape(exp.dates or "", quote=True)
-        bullets_safe = "".join([f"<li>{html.escape(b, quote=True)}</li>" for b in exp.bullets if b.strip()])
+        co_safe = html.escape(" ".join(str(exp.company or "").split()), quote=True)
+        role_safe = html.escape(" ".join(str(exp.role or "").split()), quote=True)
+        dt_safe = html.escape(" ".join(str(exp.dates or "").split()), quote=True)
+        bullets_safe = "".join([f"<li>{html.escape(' '.join(str(b or '').split()), quote=True)}</li>" for b in exp.bullets if str(b).strip()])
+        sub_html = f'<div class="paper-item-sub"><span>{role_safe}</span></div>' if role_safe else ""
+        bullets_html = f'<ul>{bullets_safe}</ul>' if bullets_safe else ""
         exp_html_list.append(
             f'<div class="paper-item-header"><span class="paper-item-title">{co_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
-            f'<div class="paper-item-sub"><span>{role_safe}</span></div>'
-            f'<ul>{bullets_safe}</ul>'
+            f'{sub_html}{bullets_html}'
         )
     exp_section = ""
     if exp_html_list:
@@ -955,24 +991,40 @@ def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
         
     proj_html_list = []
     for proj in (resume.projects or []):
-        name_p_safe = html.escape(proj.name or "", quote=True)
-        tech_safe = html.escape(proj.tech_stack or "", quote=True)
-        bullets_safe = "".join([f"<li>{html.escape(b, quote=True)}</li>" for b in proj.bullets if b.strip()])
-        tech_span = f'<span class="paper-project-tech"> | {tech_safe}</span>' if tech_safe else ""
+        name_p_safe = html.escape(" ".join(str(proj.name or "").split()), quote=True)
+        tech_safe = html.escape(" ".join(str(proj.tech_stack or "").split()), quote=True)
+        dt_safe = html.escape(" ".join(str(getattr(proj, "dates", "") or "").split()), quote=True)
+        bullets_safe = "".join([f"<li>{html.escape(' '.join(str(b or '').split()), quote=True)}</li>" for b in proj.bullets if str(b).strip()])
+        sub_html = f'<div class="paper-item-sub"><span>{tech_safe}</span></div>' if tech_safe else ""
+        bullets_html = f'<ul>{bullets_safe}</ul>' if bullets_safe else ""
         proj_html_list.append(
-            f'<div class="paper-project-header"><span class="paper-project-name">{name_p_safe}</span>{tech_span}</div>'
-            f'<ul>{bullets_safe}</ul>'
+            f'<div class="paper-item-header"><span class="paper-item-title">{name_p_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
+            f'{sub_html}{bullets_html}'
         )
     proj_section = ""
     if proj_html_list:
         proj_section = f'<div class="paper-section-title">Projects</div>' + "".join(proj_html_list)
         
-    skills_safe = html.escape(", ".join(resume.skills or []), quote=True)
-    skills_section = ""
-    if skills_safe:
-        skills_section = f'<div class="paper-section-title">Technical Skills</div><div class="paper-skills">{skills_safe}</div>'
+    edu_html_list = []
+    for edu in (resume.education or []):
+        inst_safe = html.escape(" ".join(str(edu.institution or "").split()), quote=True)
+        deg_safe = html.escape(" ".join(str(edu.degree or "").split()), quote=True)
+        dt_safe = html.escape(" ".join(str(edu.dates or "").split()), quote=True)
+        edu_html_list.append(
+            f'<div class="paper-item-header"><span class="paper-item-title">{deg_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
+            f'<div class="paper-item-sub"><span>{inst_safe}</span></div>'
+        )
+    edu_section = ""
+    if edu_html_list:
+        edu_section = f'<div class="paper-section-title">Education</div>' + "".join(edu_html_list)
         
-    return f'<div class="paper-viewer"><div class="paper-sheet"><h1>{name_safe}</h1><div class="paper-contact">{contact_safe}</div>{edu_section}{exp_section}{proj_section}{skills_section}</div></div>'
+    certs_section = ""
+    if getattr(resume, "certifications", None):
+        cert_items = "".join([f"<li>{html.escape(' '.join(str(c or '').split()), quote=True)}</li>" for c in resume.certifications if str(c).strip()])
+        if cert_items:
+            certs_section = f'<div class="paper-section-title">Certifications &amp; Awards</div><ul>{cert_items}</ul>'
+        
+    return f'<div class="paper-viewer"><div class="paper-sheet"><h1>{name_safe}</h1><div class="paper-contact">{contact_safe}</div>{summary_section}{skills_section}{exp_section}{proj_section}{edu_section}{certs_section}</div></div>'
 
 @st.dialog("New Project", width="large")
 def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
@@ -1437,6 +1489,13 @@ else:
                         key="form_user_contact",
                     )
 
+                form_summary = st.text_area(
+                    "Personal Summary (Optional)",
+                    value=getattr(current_resume, "summary", "") or "",
+                    help="Concise 2-3 sentence professional overview.",
+                    key="form_user_summary",
+                )
+
                 form_skills = st.text_area(
                     "Technical Skills (comma-separated)",
                     value=", ".join(current_resume.skills),
@@ -1480,7 +1539,11 @@ else:
                 st.markdown("##### Project Bullets")
                 edited_projects = []
                 for i, proj in enumerate(current_resume.projects):
-                    st.markdown(f"**{proj.name}** [{proj.tech_stack}]")
+                    col_pj1, col_pj2 = st.columns([0.7, 0.3])
+                    with col_pj1:
+                        st.markdown(f"**{proj.name}** [{proj.tech_stack}]")
+                    with col_pj2:
+                        pj_dt = st.text_input(f"Proj {i+1} Dates", value=getattr(proj, "dates", "") or "", key=f"form_proj_dates_{i}")
                     new_bullets = []
                     for j, b in enumerate(proj.bullets):
                         val = st.text_input(
@@ -1494,21 +1557,35 @@ else:
                             name=proj.name,
                             tech_stack=proj.tech_stack,
                             bullets=new_bullets,
+                            dates=pj_dt,
                         )
                     )
+
+                form_certs = st.text_area(
+                    "Certifications & Awards (one per line, optional)",
+                    value="\n".join(getattr(current_resume, "certifications", []) or []),
+                    help="One certification, award, or honor per line.",
+                    key="form_user_certs",
+                )
 
                 save_changes = st.form_submit_button("Save & Update Candidate Profile")
                 if save_changes:
                     updated_skills = [
                         s.strip() for s in form_skills.split(",") if s.strip()
                     ]
+                    updated_certs = [
+                        c.strip() for c in form_certs.split("\n") if c.strip()
+                    ]
                     st.session_state["resume_data"] = ResumeModel(
                         name=form_name,
                         contact_line=form_contact,
+                        summary=form_summary.strip(),
                         education=edited_education if edited_education else current_resume.education,
                         experience=edited_experience,
                         projects=edited_projects,
                         skills=updated_skills,
+                        skill_categories=getattr(current_resume, "skill_categories", []),
+                        certifications=updated_certs,
                     )
                     clear_form_state()
                     st.success("Candidate profile updated in session state!")
