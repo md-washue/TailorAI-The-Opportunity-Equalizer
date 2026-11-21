@@ -28,6 +28,16 @@ from PIL import Image, ImageDraw
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.units import inch
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+
 import streamlit as st
 import streamlit.components.v1 as components
 from google import genai
@@ -171,7 +181,7 @@ def log_event(session_id: str, event_type: str, success: bool):
         pass
 
 def get_telemetry_counts() -> dict:
-    counts = {"parse": 0, "optimize": 0, "export_tex": 0, "cover_letter": 0}
+    counts = {"parse": 0, "optimize": 0, "export_tex": 0, "export_pdf": 0, "cover_letter": 0}
     try:
         with DB_LOCK:
             conn = sqlite3.connect(DB_PATH)
@@ -654,6 +664,249 @@ def render_plaintext(resume: ResumeModel) -> str:
         lines.append("")
     return "\n".join(lines)
 
+def render_pdf_bytes(resume: Optional[ResumeModel]) -> bytes:
+    """Renders a high-fidelity vector PDF matching Trey Hunner's Medium Length CV format."""
+    if not REPORTLAB_AVAILABLE or not resume:
+        return b""
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=letter,
+        leftMargin=0.55 * inch,
+        rightMargin=0.55 * inch,
+        topMargin=0.55 * inch,
+        bottomMargin=0.55 * inch,
+    )
+
+    def _clean(val) -> str:
+        text = " ".join(str(val or "").split())
+        text = re.sub(r"\s*([\u2013\u2014])\s*", r" \1 ", text)
+        return html.escape(text, quote=True)
+
+    styles = getSampleStyleSheet()
+
+    name_style = ParagraphStyle(
+        "ResumeName",
+        parent=styles["Normal"],
+        fontName="Times-Bold",
+        fontSize=14,
+        leading=16,
+        alignment=1,
+        spaceAfter=3,
+    )
+
+    contact_style = ParagraphStyle(
+        "ResumeContact",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=9,
+        leading=11.5,
+        alignment=1,
+        spaceAfter=6,
+    )
+
+    sec_title_style = ParagraphStyle(
+        "ResumeSectionTitle",
+        parent=styles["Normal"],
+        fontName="Times-Bold",
+        fontSize=9.5,
+        leading=12,
+        spaceBefore=6,
+        spaceAfter=1,
+    )
+
+    summary_style = ParagraphStyle(
+        "ResumeSummary",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=9,
+        leading=12,
+        alignment=4,
+        spaceBefore=2,
+        spaceAfter=4,
+    )
+
+    skill_cat_style = ParagraphStyle(
+        "SkillCategory",
+        parent=styles["Normal"],
+        fontName="Times-Bold",
+        fontSize=8.8,
+        leading=11.5,
+    )
+
+    skill_val_style = ParagraphStyle(
+        "SkillValue",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=8.8,
+        leading=11.5,
+    )
+
+    skills_flat_style = ParagraphStyle(
+        "SkillsFlat",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=8.8,
+        leading=11.5,
+        spaceBefore=2,
+        spaceAfter=4,
+    )
+
+    item_title_left = ParagraphStyle(
+        "ItemTitleLeft",
+        parent=styles["Normal"],
+        fontName="Times-Bold",
+        fontSize=9.2,
+        leading=11.8,
+    )
+
+    item_date_right = ParagraphStyle(
+        "ItemDateRight",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=8.8,
+        leading=11.8,
+        alignment=2,
+    )
+
+    item_sub_style = ParagraphStyle(
+        "ItemSub",
+        parent=styles["Normal"],
+        fontName="Times-Italic",
+        fontSize=8.6,
+        leading=11,
+        spaceBefore=1,
+        spaceAfter=2,
+    )
+
+    bullet_style = ParagraphStyle(
+        "BulletText",
+        parent=styles["Normal"],
+        fontName="Times-Roman",
+        fontSize=8.8,
+        leading=11.4,
+        leftIndent=12,
+        firstLineIndent=-8,
+        spaceAfter=2,
+    )
+
+    header_table_style = TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "BASELINE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+    ])
+
+    skill_table_style = TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 1),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+    ])
+
+    story = []
+
+    name_str = _clean(resume.name or "Untitled Resume").upper()
+    contact_str = _clean(resume.contact_line or "")
+
+    story.append(Paragraph(name_str, name_style))
+    if contact_str:
+        story.append(Paragraph(contact_str, contact_style))
+    else:
+        story.append(Spacer(1, 4))
+
+    def _add_section(title: str):
+        story.append(Paragraph(title.upper(), sec_title_style))
+        story.append(HRFlowable(width="100%", thickness=0.75, color=colors.black, spaceBefore=1, spaceAfter=3))
+
+    if getattr(resume, "summary", "") and resume.summary.strip():
+        _add_section("Personal Summary")
+        story.append(Paragraph(_clean(resume.summary), summary_style))
+
+    if getattr(resume, "skill_categories", None):
+        _add_section("Skills")
+        skill_data = []
+        for sc in resume.skill_categories:
+            cat_str = _clean(sc.category)
+            items_str = _clean(sc.items)
+            if cat_str or items_str:
+                skill_data.append([
+                    Paragraph(f"<b>{cat_str}:</b>", skill_cat_style),
+                    Paragraph(items_str, skill_val_style),
+                ])
+        if skill_data:
+            story.append(Table(skill_data, colWidths=[1.65 * inch, None], style=skill_table_style))
+            story.append(Spacer(1, 3))
+    elif resume.skills:
+        _add_section("Skills")
+        clean_skills = [_clean(s) for s in resume.skills if str(s).strip()]
+        if clean_skills:
+            story.append(Paragraph(", ".join(clean_skills), skills_flat_style))
+            story.append(Spacer(1, 3))
+
+    if resume.experience:
+        _add_section("Experience")
+        for exp in resume.experience:
+            co_safe = _clean(exp.company)
+            role_safe = _clean(exp.role)
+            dt_safe = _clean(exp.dates)
+            row = [
+                Paragraph(f"<b>{co_safe}</b>", item_title_left),
+                Paragraph(f"{dt_safe}", item_date_right) if dt_safe else Paragraph("", item_date_right),
+            ]
+            story.append(Table([row], colWidths=[5.4 * inch, 2.0 * inch], style=header_table_style))
+            if role_safe:
+                story.append(Paragraph(f"<i>{role_safe}</i>", item_sub_style))
+            for b in exp.bullets:
+                b_safe = _clean(b)
+                if b_safe:
+                    story.append(Paragraph(f"&bull; {b_safe}", bullet_style))
+
+    if resume.projects:
+        _add_section("Projects")
+        for proj in resume.projects:
+            name_p_safe = _clean(proj.name)
+            tech_safe = _clean(proj.tech_stack)
+            dt_safe = _clean(getattr(proj, "dates", "") or "")
+            row = [
+                Paragraph(f"<b>{name_p_safe}</b>", item_title_left),
+                Paragraph(f"{dt_safe}", item_date_right) if dt_safe else Paragraph("", item_date_right),
+            ]
+            story.append(Table([row], colWidths=[5.4 * inch, 2.0 * inch], style=header_table_style))
+            if tech_safe:
+                story.append(Paragraph(f"<i>{tech_safe}</i>", item_sub_style))
+            for b in proj.bullets:
+                b_safe = _clean(b)
+                if b_safe:
+                    story.append(Paragraph(f"&bull; {b_safe}", bullet_style))
+
+    if resume.education:
+        _add_section("Education")
+        for edu in resume.education:
+            deg_safe = _clean(edu.degree)
+            inst_safe = _clean(edu.institution)
+            dt_safe = _clean(edu.dates)
+            row = [
+                Paragraph(f"<b>{deg_safe}</b>", item_title_left),
+                Paragraph(f"{dt_safe}", item_date_right) if dt_safe else Paragraph("", item_date_right),
+            ]
+            story.append(Table([row], colWidths=[5.4 * inch, 2.0 * inch], style=header_table_style))
+            if inst_safe:
+                story.append(Paragraph(f"<i>{inst_safe}</i>", item_sub_style))
+
+    if getattr(resume, "certifications", None):
+        clean_certs = [_clean(c) for c in resume.certifications if str(c).strip()]
+        if clean_certs:
+            _add_section("Certifications & Awards")
+            for cert in clean_certs:
+                story.append(Paragraph(f"&bull; {cert}", bullet_style))
+
+    doc.build(story)
+    return buf.getvalue()
+
 # Canonical alias for resume formatting
 resume_to_text = render_plaintext
 
@@ -800,6 +1053,10 @@ def live_spinner(message: str):
 def handle_export_click():
     """Logs the export event cleanly."""
     log_event(st.session_state.get("session_id", "anonymous"), "export_tex", True)
+
+def handle_pdf_export_click():
+    """Logs the PDF export event cleanly."""
+    log_event(st.session_state.get("session_id", "anonymous"), "export_pdf", True)
 
 # -----------------------------------------------------------------------------
 # Sidebar: Workspace Navigation, Project Files, Auth & Telemetry
@@ -972,8 +1229,10 @@ def call_gemini_cover_letter(
     """Stage 5: Generates a bespoke matching 3-paragraph executive cover letter."""
     client = genai.Client(api_key=api_key, http_options={"timeout": 25000})
     resume_txt = render_plaintext(resume)
+    today_str = date.today().strftime("%B %d, %Y")
     prompt = f"""You are an executive cover letter writer. Draft an engaging, professional 3-paragraph cover letter for the candidate applying to the target job description.
 Highlight their tailored technical accomplishments from their resume, directly addressing key responsibilities without fabricating background details.
+Use the candidate's REAL name ({resume.name}), contact details ({resume.contact_line}), and today's date ({today_str}) in the header and sign-off. NEVER output bracketed placeholders like [Your Name], [Your Email], [Your Phone Number], or [Date].
 
 Candidate Resume:
 {resume_txt}
@@ -1376,6 +1635,7 @@ with st.sidebar:
         st.caption(f"Resumes Parsed: **{telemetry['parse']}**")
         st.caption(f"Bullet Sets Tailored: **{telemetry['optimize']}**")
         st.caption(f"LaTeX Resumes Exported: **{telemetry['export_tex']}**")
+        st.caption(f"PDF Resumes Exported: **{telemetry.get('export_pdf', 0)}**")
 
 # -----------------------------------------------------------------------------
 # Main Screen: Home (Welcome State) vs. Active Workspace Split-Pane
@@ -1392,9 +1652,14 @@ template_str = get_cached_template()
 rendered_latex = ""
 is_valid_latex = False
 rendered_plaintext = ""
+rendered_pdf_bytes = b""
 if active_resume and template_str:
     rendered_latex, is_valid_latex = render_latex(active_resume, template_str)
     rendered_plaintext = render_plaintext(active_resume)
+    try:
+        rendered_pdf_bytes = render_pdf_bytes(active_resume)
+    except Exception:
+        rendered_pdf_bytes = b""
 
 if current_view == "home" or not has_project:
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1457,7 +1722,7 @@ else:
     jd_label = "● Target JD" if has_target_jd else "+ Target JD"
 
     col_tb_1, col_tb_2, col_tb_3, col_tb_4, col_tb_5, col_tb_6 = st.columns(
-        [0.34, 0.09, 0.14, 0.17, 0.13, 0.13],
+        [0.32, 0.09, 0.14, 0.17, 0.14, 0.14],
         vertical_alignment="center",
         gap="small",
     )
@@ -1488,6 +1753,18 @@ else:
 
     with col_tb_5:
         st.download_button(
+            label="Download .pdf",
+            data=rendered_pdf_bytes,
+            file_name=f"{safe_filename}_Tailored.pdf",
+            mime="application/pdf",
+            disabled=not bool(rendered_pdf_bytes),
+            use_container_width=True,
+            on_click=handle_pdf_export_click,
+            key="tb_download_pdf_btn",
+        )
+
+    with col_tb_6:
+        st.download_button(
             label="Download .tex",
             data=rendered_latex,
             file_name=f"{safe_filename}_Tailored.tex",
@@ -1496,17 +1773,6 @@ else:
             use_container_width=True,
             on_click=handle_export_click,
             key="tb_download_tex_btn",
-        )
-
-    with col_tb_6:
-        st.download_button(
-            label="Export .txt",
-            data=rendered_plaintext,
-            file_name=f"{safe_filename}_Tailored.txt",
-            mime="text/plain",
-            disabled=not bool(rendered_plaintext),
-            use_container_width=True,
-            key="tb_download_txt_btn",
         )
 
     st.markdown('<div class="ide-divider"></div>', unsafe_allow_html=True)
@@ -1605,6 +1871,14 @@ else:
 
         with tab_latex:
             st.code(rendered_latex, language="latex", line_numbers=True, wrap_lines=False)
+            st.download_button(
+                label="Export .txt",
+                data=rendered_plaintext,
+                file_name=f"{safe_filename}_Tailored.txt",
+                mime="text/plain",
+                disabled=not bool(rendered_plaintext),
+                key="code_download_txt_btn",
+            )
 
         with tab_editor:
             st.markdown("#### **Structured Candidate Data**")
