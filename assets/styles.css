@@ -32,7 +32,7 @@ html[data-theme="dark"] {
     --btn-primary-text: #1C1919;
 }
 
-/* Smooth Cross-Fade Theme Transitions (220ms) */
+/* Smooth Cross-Fade Theme Transitions (180ms) */
 .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stHeader"],
@@ -43,7 +43,7 @@ html[data-theme="dark"] {
 .stButton > button,
 .stTextInput input,
 .stTextArea textarea {
-    transition: background-color 0.22s ease, color 0.22s ease, border-color 0.22s ease !important;
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease !important;
 }
 
 /* Soften Streamlit's stale-element overlay */
@@ -653,31 +653,61 @@ button[data-testid="stBaseButton-secondary"]:hover {
     80%, 100% { content: "..."; }
 }
 
-[data-testid="stSpinner"] {
+[data-testid="stSpinner"],
+.stSpinner {
     background-color: var(--card-bg) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
-    padding: 0.65rem 0.9rem !important;
+    padding: 0.65rem 1rem !important;
     margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05) !important;
+    width: fit-content !important;
+    max-width: 100% !important;
 }
 
-[data-testid="stSpinner"] i,
+[data-testid="stSpinnerIcon"],
+[data-testid="stSpinner"] [data-testid="stSpinnerIcon"],
+.stSpinner span[data-testid="stSpinnerIcon"],
 [data-testid="stSpinner"] [role="progressbar"],
+[data-testid="stSpinner"] i,
 [data-testid="stSpinner"] svg {
-    border-color: var(--border-color) !important;
+    border-style: solid !important;
+    border-width: 2.5px !important;
+    border-color: rgba(128, 59, 75, 0.22) !important;
     border-top-color: var(--primary-color) !important;
+    border-right-color: var(--primary-color) !important;
     color: var(--primary-color) !important;
     stroke: var(--primary-color) !important;
 }
 
-[data-testid="stSpinner"] [data-testid="stMarkdownContainer"] p::after {
-    content: "";
-    display: inline-block;
-    width: 1.5em;
-    text-align: left;
-    font-weight: 700;
-    color: var(--primary-color);
-    animation: tailorLoadingDots 1.2s steps(1, end) infinite;
+html[data-theme="dark"] [data-testid="stSpinnerIcon"],
+html[data-theme="dark"] [data-testid="stSpinner"] [data-testid="stSpinnerIcon"],
+html[data-theme="dark"] .stSpinner span[data-testid="stSpinnerIcon"] {
+    border-color: rgba(166, 93, 112, 0.3) !important;
+    border-top-color: var(--primary-color) !important;
+    border-right-color: var(--primary-color) !important;
+}
+
+[data-testid="stSpinner"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSpinner"] [role="status"] p,
+[data-testid="stSpinner"] p {
+    color: var(--text-color) !important;
+    font-size: 0.92rem !important;
+    font-weight: 500 !important;
+    margin: 0 !important;
+}
+
+[data-testid="stSpinner"] [data-testid="stMarkdownContainer"] p:last-child::after,
+[data-testid="stSpinner"] [role="status"] p:last-child::after,
+[data-testid="stSpinner"] p:last-child::after {
+    content: "" !important;
+    display: inline-block !important;
+    width: 1.5em !important;
+    text-align: left !important;
+    font-weight: 700 !important;
+    color: var(--primary-color) !important;
+    animation: tailorLoadingDots 1.2s steps(1, end) infinite !important;
 }
 
 
