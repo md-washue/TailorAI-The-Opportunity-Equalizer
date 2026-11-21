@@ -1047,14 +1047,14 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
                         st.error("Demo quota limit reached (50/50). Please provide your personal Google AI Studio API Key in the sidebar.")
                         st.stop()
                 
-                with st.spinner("Extracting text from PDF (capped at 3 pages)..."):
+                with st.spinner("Extracting text from PDF (capped at 3 pages)"):
                     raw_text = extract_pdf_text(pdf_file)
                 if gh_input_pdf.strip():
-                    with st.spinner("Fetching public GitHub repositories..."):
+                    with st.spinner("Fetching public GitHub repositories"):
                         gh_text = fetch_github_repos(gh_input_pdf)
                         raw_text += gh_text
                 
-                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}..."):
+                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}"):
                     try:
                         parsed = call_gemini_extraction(raw_text, active_key)
                         if parsed:
@@ -1093,11 +1093,11 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
                 
                 raw_text = paste_text.strip()[:4000]
                 if gh_input_paste.strip():
-                    with st.spinner("Fetching public GitHub repositories..."):
+                    with st.spinner("Fetching public GitHub repositories"):
                         gh_text = fetch_github_repos(gh_input_paste)
                         raw_text += gh_text
                 
-                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}..."):
+                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}"):
                     try:
                         parsed = call_gemini_extraction(raw_text, active_key)
                         if parsed:
@@ -1401,7 +1401,7 @@ else:
                     st.error("Demo quota limit reached (50/50). Please use your personal Google AI Studio API Key in the sidebar.")
                     st.stop()
 
-            with st.spinner("Aligning accomplishment bullets with job description..."):
+            with st.spinner("Aligning accomplishment bullets with job description"):
                 try:
                     base_resume: ResumeModel = st.session_state["resume_data"]
                     jd_text = st.session_state["job_description"]
@@ -1457,21 +1457,27 @@ else:
 
     # Left Column: Inputs, Structured Editing & LaTeX Source
     with left_col:
-        tab_jd, tab_editor, tab_latex = st.tabs(["Target JD", "Structured Editor", "LaTeX (.tex)"])
+        tab_latex, tab_editor, tab_jd = st.tabs(["Code (.tex)", "Visual Editor", "Target JD"])
 
-        with tab_jd:
-            st.markdown("#### **Target Job Description**")
-            jd_input = st.text_area(
-                "Paste Target Job Posting (Caps at 4,000 characters)",
-                value=st.session_state.get("job_description", ""),
-                height=420,
-                placeholder="Paste role requirements, responsibilities, and technical stack...",
-                key="workspace_jd_input",
+        with tab_latex:
+            st.markdown("#### **LaTeX Source & Plain Text**")
+            if is_valid_latex:
+                st.success("LaTeX Compile Sanity Verified: Matching \\begin and \\end blocks.")
+            else:
+                st.error("LaTeX Compilation Warning: Tag mismatch detected.")
+
+            st.caption(f"Document Size: {len(rendered_latex):,} characters | Target Engine: pdfLaTeX / XeLaTeX")
+
+            st.download_button(
+                label="Download Plain Text (.txt)",
+                data=rendered_plaintext,
+                file_name=f"{safe_filename}_Tailored.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key="tab_latex_download_txt",
             )
-            char_len = len(jd_input)
-            st.caption(f"{char_len:,} / 4,000 characters")
-            if jd_input != st.session_state.get("job_description", ""):
-                st.session_state["job_description"] = jd_input
+
+            st.code(rendered_latex, language="latex")
 
         with tab_editor:
             st.markdown("#### **Structured Candidate Data**")
@@ -1591,25 +1597,19 @@ else:
                     st.success("Candidate profile updated in session state!")
                     st.rerun()
 
-        with tab_latex:
-            st.markdown("#### **LaTeX Source & Plain Text**")
-            if is_valid_latex:
-                st.success("LaTeX Compile Sanity Verified: Matching \\begin and \\end blocks.")
-            else:
-                st.error("LaTeX Compilation Warning: Tag mismatch detected.")
-
-            st.caption(f"Document Size: {len(rendered_latex):,} characters | Target Engine: pdfLaTeX / XeLaTeX")
-
-            st.download_button(
-                label="Download Plain Text (.txt)",
-                data=rendered_plaintext,
-                file_name=f"{safe_filename}_Tailored.txt",
-                mime="text/plain",
-                use_container_width=True,
-                key="tab_latex_download_txt",
+        with tab_jd:
+            st.markdown("#### **Target Job Description**")
+            jd_input = st.text_area(
+                "Paste Target Job Posting (Caps at 4,000 characters)",
+                value=st.session_state.get("job_description", ""),
+                height=420,
+                placeholder="Paste role requirements, responsibilities, and technical stack...",
+                key="workspace_jd_input",
             )
-
-            st.code(rendered_latex, language="latex")
+            char_len = len(jd_input)
+            st.caption(f"{char_len:,} / 4,000 characters")
+            if jd_input != st.session_state.get("job_description", ""):
+                st.session_state["job_description"] = jd_input
 
     # Right Column: Visual Preview, ATS Metrics & Diffs, Cover Letter
     with right_col:
@@ -1736,7 +1736,7 @@ else:
                             st.error("Demo quota limit reached (50/50). Please use your personal Google AI Studio API Key in the sidebar.")
                             st.stop()
 
-                    with st.spinner(f"Drafting bespoke cover letter with {MODEL_NAME}..."):
+                    with st.spinner(f"Drafting bespoke cover letter with {MODEL_NAME}"):
                         try:
                             cv_text = call_gemini_cover_letter(
                                 active_for_cv,
