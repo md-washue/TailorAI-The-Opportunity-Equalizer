@@ -931,7 +931,7 @@ def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
         deg_safe = html.escape(edu.degree or "", quote=True)
         dt_safe = html.escape(edu.dates or "", quote=True)
         edu_html_list.append(
-            f'<div class="paper-item-header"><span>{inst_safe}</span><span>{dt_safe}</span></div>'
+            f'<div class="paper-item-header"><span class="paper-item-title">{inst_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
             f'<div class="paper-item-sub"><span>{deg_safe}</span></div>'
         )
     edu_section = ""
@@ -945,7 +945,7 @@ def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
         dt_safe = html.escape(exp.dates or "", quote=True)
         bullets_safe = "".join([f"<li>{html.escape(b, quote=True)}</li>" for b in exp.bullets if b.strip()])
         exp_html_list.append(
-            f'<div class="paper-item-header"><span>{co_safe}</span><span>{dt_safe}</span></div>'
+            f'<div class="paper-item-header"><span class="paper-item-title">{co_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
             f'<div class="paper-item-sub"><span>{role_safe}</span></div>'
             f'<ul>{bullets_safe}</ul>'
         )
@@ -958,8 +958,9 @@ def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
         name_p_safe = html.escape(proj.name or "", quote=True)
         tech_safe = html.escape(proj.tech_stack or "", quote=True)
         bullets_safe = "".join([f"<li>{html.escape(b, quote=True)}</li>" for b in proj.bullets if b.strip()])
+        tech_span = f'<span class="paper-project-tech"> | {tech_safe}</span>' if tech_safe else ""
         proj_html_list.append(
-            f'<div class="paper-item-header"><span>{name_p_safe}</span><span>[{tech_safe}]</span></div>'
+            f'<div class="paper-project-header"><span class="paper-project-name">{name_p_safe}</span>{tech_span}</div>'
             f'<ul>{bullets_safe}</ul>'
         )
     proj_section = ""
@@ -1296,15 +1297,15 @@ if current_view == "home" or not has_project:
                     st.success("Sample project loaded into workspace!")
                     st.rerun()
 else:
-    # Top IDE Toolbar (Overleaf-style Breadcrumbs & Actions)
-    col_tb_1, col_tb_2, col_tb_3, col_tb_4, col_tb_5 = st.columns(
-        [0.30, 0.15, 0.21, 0.16, 0.18],
+    # Top IDE Toolbar (Self-Contained Overleaf-style Breadcrumbs & Actions)
+    col_tb_1, col_tb_2, col_tb_3, col_tb_4 = st.columns(
+        [0.44, 0.14, 0.22, 0.20],
         vertical_alignment="center",
     )
 
     with col_tb_1:
         st.markdown(
-            f'<div class="ide-breadcrumb">TailorAI / <span>{html.escape(safe_filename, quote=True)}.tex</span></div>',
+            f'<div class="ide-breadcrumb">TailorAI / <span title="{html.escape(safe_filename, quote=True)}.tex">{html.escape(safe_filename, quote=True)}.tex</span></div>',
             unsafe_allow_html=True,
         )
 
@@ -1331,24 +1332,6 @@ else:
             on_click=handle_export_click,
             key="tb_download_tex_btn",
         )
-
-    with col_tb_5:
-        if rendered_latex and is_valid_latex and len(rendered_latex) < 120000:
-            snip = html.escape(rendered_latex, quote=True)
-            overleaf_html = f"""
-            <form action="https://www.overleaf.com/docs" method="POST" target="_blank" style="margin:0;">
-                <input type="hidden" name="snip" value="{snip}">
-                <input type="hidden" name="snip_name" value="{safe_filename}_TailorAI.tex">
-                <button type="submit" style="
-                    background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--primary-color);
-                    border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600;
-                    padding: 0.45rem 0.6rem; width: 100%; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
-                ">Overleaf ↗</button>
-            </form>
-            """
-            st.markdown(overleaf_html, unsafe_allow_html=True)
-        else:
-            st.button("Overleaf ↗", disabled=True, use_container_width=True, key="tb_overleaf_disabled_btn")
 
     st.markdown("---")
 
