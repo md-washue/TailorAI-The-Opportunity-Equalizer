@@ -77,21 +77,30 @@ html[data-theme="dark"] {
     padding-bottom: 0.75rem !important;
 }
 
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {
+    margin-bottom: 0 !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p {
+    margin-bottom: 0 !important;
+}
+
 [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 0.35rem !important;
+    gap: 0.45rem !important;
 }
 
 .sidebar-divider {
     height: 1px;
     background-color: var(--border-color);
-    margin: 0.2rem 0;
+    margin: 0.35rem 0 !important;
     width: 100%;
 }
 
 [data-testid="stSidebar"] .status-banner {
-    padding: 0.5rem 0.7rem !important;
-    margin: 0.3rem 0 !important;
+    padding: 0.55rem 0.75rem !important;
+    margin: 0.15rem 0 0.25rem 0 !important;
     font-size: 0.8rem !important;
+    line-height: 1.4 !important;
 }
 
 .sidebar-file-item {
@@ -108,26 +117,14 @@ html[data-theme="dark"] {
 .sidebar-file-item .file-dot.active { color: #2E7D32; }
 .sidebar-file-item .file-dot.idle { color: var(--muted-text); opacity: 0.55; }
 
-.st-key-sidebar_file_jd_btn button {
-    background-color: transparent !important;
-    border: 1px solid transparent !important;
-    padding: 0.24rem 0.45rem !important;
-    min-height: 0 !important;
-    height: auto !important;
-    justify-content: flex-start !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 0.79rem !important;
-    font-weight: 400 !important;
-    color: var(--text-color) !important;
-    text-align: left !important;
-    border-radius: 5px !important;
-    box-shadow: none !important;
+[data-testid="stSidebar"] .stTextInput input {
+    font-size: 0.83rem !important;
 }
 
-.st-key-sidebar_file_jd_btn button:hover {
-    background-color: var(--card-bg) !important;
-    border-color: var(--border-color) !important;
-    color: var(--primary-color) !important;
+[data-testid="stSidebar"] h4 {
+    margin-top: 0.15rem !important;
+    margin-bottom: 0.15rem !important;
+    font-size: 0.92rem !important;
 }
 
 /* Base Canvas & App Layout Bound to Theme Engine */
@@ -1055,6 +1052,45 @@ html[data-theme="dark"] [data-testid="stSpinner"] i {
 [data-testid="stToast"] span {
     color: var(--text-color) !important;
 }
+
+/* Sidebar File Button Override for Target Job Description */
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button,
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button[kind="secondary"],
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button[data-testid="stBaseButton-secondary"] {
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    padding: 0.24rem 0.45rem !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    border-radius: 5px !important;
+    box-shadow: none !important;
+    color: var(--text-color) !important;
+}
+
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button p,
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button span,
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button div {
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.79rem !important;
+    font-weight: 400 !important;
+    line-height: 1.3 !important;
+    color: inherit !important;
+    margin: 0 !important;
+    text-align: left !important;
+}
+
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button:hover,
+[data-testid="stSidebar"] .st-key-sidebar_file_jd_btn button[data-testid="stBaseButton-secondary"]:hover {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--primary-color) !important;
+}
+
 
 
 

@@ -1526,7 +1526,7 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
 
-    col_logo, col_title = st.columns([0.27, 0.73], vertical_alignment="center")
+    col_logo, col_title = st.columns([0.24, 0.76], vertical_alignment="center", gap="small")
     with col_logo:
         if st.button(" ", key="sidebar_logo_home_btn", help="Save progress and return to Home"):
             st.session_state["view"] = "home"
@@ -1570,19 +1570,21 @@ with st.sidebar:
     has_jd = bool(st.session_state.get("job_description", "").strip())
     has_tailored = bool(st.session_state.get("tailored_resume"))
 
+    res_icon = "●" if has_res else "○"
     res_dot = "active" if has_res else "idle"
+    diff_icon = "●" if has_tailored else "○"
     diff_dot = "active" if has_tailored else "idle"
     jd_icon = "●" if has_jd else "○"
 
     st.markdown(
-        f'<div class="sidebar-file-item"><span class="file-dot {res_dot}">●</span> master_resume.tex</div>',
+        f'<div class="sidebar-file-item"><span class="file-dot {res_dot}">{res_icon}</span> master_resume.tex</div>',
         unsafe_allow_html=True,
     )
-    if st.button(f"{jd_icon} job_description.txt", key="sidebar_file_jd_btn", use_container_width=True):
+    if st.button(f"{jd_icon}  job_description.txt", key="sidebar_file_jd_btn", use_container_width=True, help="Click to paste or edit Target Job Description"):
         st.session_state["open_jd_modal_flag"] = True
         st.rerun()
     st.markdown(
-        f'<div class="sidebar-file-item"><span class="file-dot {diff_dot}">●</span> tailored_diff.json</div>',
+        f'<div class="sidebar-file-item"><span class="file-dot {diff_dot}">{diff_icon}</span> tailored_diff.json</div>',
         unsafe_allow_html=True,
     )
 
@@ -1591,7 +1593,7 @@ with st.sidebar:
     user_api_key = st.text_input(
         "Optional: Bring Your Own Gemini Key",
         type="password",
-        placeholder="Leave blank to use Free Mode",
+        placeholder="Paste Gemini key (optional)",
         help="Adding a personal Google AI Studio key unlocks higher rate limits and priority speed. Keys are held strictly in memory.",
         key="sidebar_user_key_input",
     )
@@ -1607,8 +1609,8 @@ with st.sidebar:
         st.markdown(
             f"""
             <div class="status-banner">
-                <strong>Free Mode Active:</strong> {demo_remaining}/50 shared runs left today.<br>
-                <span style="opacity: 0.85; font-size: 0.82rem;">Add your own key above for higher speed & limits.</span>
+                <strong>Free Mode:</strong> {demo_remaining}/50 runs left today<br>
+                <span style="opacity: 0.85; font-size: 0.78rem;">Add your own key above for unlimited speed.</span>
             </div>
             """,
             unsafe_allow_html=True,
