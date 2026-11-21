@@ -71,6 +71,48 @@ html[data-theme="dark"] {
     margin: 0 !important;
 }
 
+/* Compact Sidebar & Flat File-Tree Button */
+[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    padding-top: 0.85rem !important;
+    padding-bottom: 0.75rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    gap: 0.35rem !important;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0.2rem 0;
+    width: 100%;
+}
+
+[data-testid="stSidebar"] .status-banner {
+    padding: 0.5rem 0.7rem !important;
+    margin: 0.3rem 0 !important;
+    font-size: 0.8rem !important;
+}
+
+.st-key-sidebar_file_jd_btn button {
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    padding: 0.18rem 0.35rem !important;
+    min-height: 0 !important;
+    justify-content: flex-start !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.8rem !important;
+    font-weight: 400 !important;
+    color: var(--text-color) !important;
+    text-align: left !important;
+}
+
+.st-key-sidebar_file_jd_btn button:hover {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--primary-color) !important;
+}
+
 /* Base Canvas & App Layout Bound to Theme Engine */
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -236,7 +278,7 @@ html[data-theme="light"] [data-testid="stSidebarCollapseButton"] [data-testid="s
     stroke: var(--muted-text) !important;
 }
 
-/* Tabs Styling (High-Contrast Universal Role & Attribute Selectors, No Bare Asterisks) */
+/* Tabs Styling (Scoped to Tablists only) */
 [data-testid="stTabs"] [role="tablist"],
 [role="tablist"] {
     background-color: transparent !important;
@@ -245,13 +287,12 @@ html[data-theme="light"] [data-testid="stSidebarCollapseButton"] [data-testid="s
     margin-bottom: 0.35rem !important;
 }
 
-[data-testid="stTabs"] button,
-[data-testid="stTabs"] button p,
-[data-testid="stTabs"] button span,
-[data-testid="stTabs"] [data-testid="stMarkdownContainer"] p,
-[data-baseweb="tab"],
-[data-baseweb="tab"] p,
-[data-baseweb="tab"] span {
+[role="tablist"] button[role="tab"],
+[role="tablist"] button[role="tab"] p,
+[role="tablist"] button[role="tab"] span,
+[role="tablist"] [data-baseweb="tab"],
+[role="tablist"] [data-baseweb="tab"] p,
+[role="tablist"] [data-baseweb="tab"] span {
     color: var(--muted-text) !important;
     opacity: 1 !important;
     font-family: 'Inter', sans-serif !important;
@@ -260,53 +301,24 @@ html[data-theme="light"] [data-testid="stSidebarCollapseButton"] [data-testid="s
     background-color: transparent !important;
 }
 
-html[data-theme="light"] [data-testid="stTabs"] button,
-html[data-theme="light"] [data-testid="stTabs"] button p,
-html[data-theme="light"] [data-testid="stTabs"] button span,
-html[data-theme="light"] [data-testid="stTabs"] [data-testid="stMarkdownContainer"] p,
-html[data-theme="light"] [data-baseweb="tab"],
-html[data-theme="light"] [data-baseweb="tab"] p,
-html[data-theme="light"] [data-baseweb="tab"] span {
+html[data-theme="light"] [role="tablist"] button[role="tab"],
+html[data-theme="light"] [role="tablist"] button[role="tab"] p,
+html[data-theme="light"] [role="tablist"] [data-baseweb="tab"] p {
     color: #383434 !important;
-    opacity: 1 !important;
 }
 
-[data-testid="stTabs"] button:hover,
-[data-testid="stTabs"] button:hover p,
-[data-testid="stTabs"] button:hover [data-testid="stMarkdownContainer"] p,
-[data-baseweb="tab"]:hover,
-[data-baseweb="tab"]:hover p {
+[role="tablist"] button[role="tab"]:hover,
+[role="tablist"] button[role="tab"]:hover p,
+[role="tablist"] [data-baseweb="tab"]:hover p {
     color: var(--text-color) !important;
 }
 
-html[data-theme="light"] [data-testid="stTabs"] button:hover,
-html[data-theme="light"] [data-testid="stTabs"] button:hover p,
-html[data-theme="light"] [data-testid="stTabs"] button:hover [data-testid="stMarkdownContainer"] p,
-html[data-theme="light"] [data-baseweb="tab"]:hover,
-html[data-theme="light"] [data-baseweb="tab"]:hover p {
-    color: #111111 !important;
-}
-
-[data-testid="stTabs"] button[aria-selected="true"],
-[data-testid="stTabs"] button[aria-selected="true"] p,
-[data-testid="stTabs"] button[aria-selected="true"] span,
-[data-testid="stTabs"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p,
-[data-baseweb="tab"][aria-selected="true"],
-[data-baseweb="tab"][aria-selected="true"] p,
-[data-baseweb="tab"][aria-selected="true"] span {
+[role="tablist"] button[role="tab"][aria-selected="true"],
+[role="tablist"] button[role="tab"][aria-selected="true"] p,
+[role="tablist"] button[role="tab"][aria-selected="true"] span,
+[role="tablist"] [data-baseweb="tab"][aria-selected="true"] p {
     color: var(--primary-color) !important;
     font-weight: 600 !important;
-}
-
-html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"],
-html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"] p,
-html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"] span,
-html[data-theme="light"] [data-testid="stTabs"] button[aria-selected="true"] [data-testid="stMarkdownContainer"] p,
-html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"],
-html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"] p,
-html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"] span {
-    color: #803B4B !important;
-    border-bottom: 2px solid #803B4B !important;
 }
 
 [data-baseweb="tab-highlight"] {
@@ -314,9 +326,17 @@ html[data-theme="light"] [data-baseweb="tab"][aria-selected="true"] span {
     height: 2px !important;
 }
 
+/* Material Symbols Icon Protection */
+[data-testid="stIconMaterial"] {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', sans-serif !important;
+}
+
 /* Primary Action Buttons (IDE Style) */
 button[kind="primary"],
 button[data-testid="stBaseButton-primary"],
+button[kind="primaryFormSubmit"],
+button[data-testid="stBaseButton-primaryFormSubmit"],
+[data-testid="stFormSubmitButton"] button,
 .stButton > button[kind="primary"],
 .stButton > button[data-testid="stBaseButton-primary"] {
     background-color: var(--primary-color) !important;
@@ -343,6 +363,24 @@ button[data-testid="stBaseButton-primary"] span,
 button[data-testid="stBaseButton-primary"]:hover,
 button[data-testid="stBaseButton-primary"]:hover p,
 button[data-testid="stBaseButton-primary"]:hover span,
+button[kind="primaryFormSubmit"],
+button[kind="primaryFormSubmit"] p,
+button[kind="primaryFormSubmit"] span,
+button[kind="primaryFormSubmit"]:hover,
+button[kind="primaryFormSubmit"]:hover p,
+button[kind="primaryFormSubmit"]:hover span,
+button[data-testid="stBaseButton-primaryFormSubmit"],
+button[data-testid="stBaseButton-primaryFormSubmit"] p,
+button[data-testid="stBaseButton-primaryFormSubmit"] span,
+button[data-testid="stBaseButton-primaryFormSubmit"]:hover,
+button[data-testid="stBaseButton-primaryFormSubmit"]:hover p,
+button[data-testid="stBaseButton-primaryFormSubmit"]:hover span,
+[data-testid="stFormSubmitButton"] button,
+[data-testid="stFormSubmitButton"] button p,
+[data-testid="stFormSubmitButton"] button span,
+[data-testid="stFormSubmitButton"] button:hover,
+[data-testid="stFormSubmitButton"] button:hover p,
+[data-testid="stFormSubmitButton"] button:hover span,
 [data-testid="stDialog"] button[data-testid="stBaseButton-primary"] p,
 [data-testid="stDialog"] button[kind="primary"] p {
     color: var(--btn-primary-text) !important;
@@ -350,6 +388,9 @@ button[data-testid="stBaseButton-primary"]:hover span,
 
 button[kind="primary"]:hover,
 button[data-testid="stBaseButton-primary"]:hover,
+button[kind="primaryFormSubmit"]:hover,
+button[data-testid="stBaseButton-primaryFormSubmit"]:hover,
+[data-testid="stFormSubmitButton"] button:hover,
 .stButton > button[kind="primary"]:hover,
 .stButton > button[data-testid="stBaseButton-primary"]:hover {
     filter: brightness(1.1);
@@ -414,7 +455,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
 [data-testid="stFileUploaderDropzone"] small,
 [data-testid="stFileUploaderDropzone"] svg {
     color: var(--text-color) !important;
-    fill: var(--text-color) !important;
 }
 
 [data-testid="stFileUploaderFile"] {
@@ -427,7 +467,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
 [data-testid="stFileUploaderFile"] small,
 [data-testid="stFileUploaderFile"] svg {
     color: var(--text-color) !important;
-    fill: var(--text-color) !important;
 }
 
 /* High-Contrast Download Buttons */
@@ -565,7 +604,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
     background-color: var(--card-bg) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
-    max-height: 85vh !important;
     overflow-y: auto !important;
     display: block !important;
     box-sizing: border-box !important;
@@ -581,7 +619,6 @@ button[data-testid="stBaseButton-secondary"]:hover {
     font-family: 'JetBrains Mono', monospace !important;
     font-size: 0.88rem !important;
     line-height: 1.5 !important;
-    max-height: 85vh !important;
     overflow-y: auto !important;
     margin: 0 !important;
     padding: 1rem !important;
@@ -658,9 +695,16 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     border-radius: 8px;
     padding: 12px;
     overflow-y: auto;
-    max-height: 85vh;
     display: block;
     box-sizing: border-box;
+}
+
+[data-testid="stCode"],
+[data-testid="stCode"] pre,
+.paper-viewer {
+    height: calc(100vh - 155px) !important;
+    max-height: calc(100vh - 155px) !important;
+    min-height: 420px !important;
 }
 
 .paper-sheet {
@@ -673,7 +717,7 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     border-radius: 2px;
     width: 100%;
     max-width: 780px;
-    min-height: 900px;
+    min-height: 100%;
     box-sizing: border-box;
     font-size: 0.88rem;
     line-height: 1.38;
@@ -681,11 +725,12 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 
 .paper-sheet h1 {
     font-family: 'Times New Roman', Georgia, serif !important;
-    font-size: 1.35rem;
+    font-size: clamp(0.98rem, 1.38vw, 1.25rem);
     font-weight: 700;
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
     color: #1A1A1A !important;
     margin-bottom: 2px;
 }
@@ -724,12 +769,12 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 
 .paper-sheet .paper-skills-grid {
     display: grid;
-    grid-template-columns: 140px 1fr;
-    gap: 2px 10px;
+    grid-template-columns: minmax(135px, max-content) 1fr;
+    gap: 3px 14px;
     font-family: 'Times New Roman', Georgia, serif;
-    font-size: 0.86rem;
+    font-size: 0.85rem;
     color: #222222 !important;
-    line-height: 1.38;
+    line-height: 1.36;
     margin-top: 3px;
     margin-bottom: 6px;
 }
@@ -741,7 +786,8 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
 .paper-sheet .paper-skill-cat {
     font-weight: 700;
     color: #1A1A1A !important;
-    white-space: nowrap;
+    max-width: 210px;
+    white-space: normal;
 }
 
 .paper-sheet .paper-skill-val {
@@ -761,6 +807,7 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    gap: 12px;
     font-family: 'Times New Roman', Georgia, serif;
     font-size: 0.88rem;
     margin-top: 6px;
@@ -863,10 +910,10 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
    Visible Burgundy Spinner & Live Animated Dots
    ========================================================================== */
 @keyframes tailorLoadingDots {
-    0%, 20% { content: ""; }
-    40% { content: "."; }
-    60% { content: ".."; }
-    80%, 100% { content: "..."; }
+    0%   { content: "."; }
+    33%  { content: ".."; }
+    66%  { content: "..."; }
+    100% { content: "."; }
 }
 
 [data-testid="stSpinner"],
@@ -882,24 +929,24 @@ html[data-theme="light"] [data-testid="stAlert"] [data-testid="stMarkdownContain
     max-width: 100% !important;
 }
 
-[data-testid="stSpinnerIcon"],
 [data-testid="stSpinner"] [data-testid="stSpinnerIcon"],
-.stSpinner span[data-testid="stSpinnerIcon"],
 [data-testid="stSpinner"] [role="progressbar"],
-[data-testid="stSpinner"] i,
-[data-testid="stSpinner"] svg {
+[data-testid="stSpinner"] i {
     border-style: solid !important;
     border-width: 2.5px !important;
+    border-radius: 50% !important;
     border-color: rgba(128, 59, 75, 0.22) !important;
     border-top-color: var(--primary-color) !important;
     border-right-color: var(--primary-color) !important;
+}
+
+[data-testid="stSpinner"] svg {
+    border: none !important;
     color: var(--primary-color) !important;
     stroke: var(--primary-color) !important;
 }
 
-html[data-theme="dark"] [data-testid="stSpinnerIcon"],
-html[data-theme="dark"] [data-testid="stSpinner"] [data-testid="stSpinnerIcon"],
-html[data-theme="dark"] .stSpinner span[data-testid="stSpinnerIcon"] {
+html[data-theme="dark"] [data-testid="stSpinner"] [data-testid="stSpinnerIcon"] {
     border-color: rgba(166, 93, 112, 0.3) !important;
     border-top-color: var(--primary-color) !important;
     border-right-color: var(--primary-color) !important;
@@ -917,13 +964,14 @@ html[data-theme="dark"] .stSpinner span[data-testid="stSpinnerIcon"] {
 [data-testid="stSpinner"] [data-testid="stMarkdownContainer"] p:last-child::after,
 [data-testid="stSpinner"] [role="status"] p:last-child::after,
 [data-testid="stSpinner"] p:last-child::after {
-    content: "";
-    display: inline-block !important;
-    width: 1.5em !important;
-    text-align: left !important;
-    font-weight: 700 !important;
-    color: var(--primary-color) !important;
-    animation: tailorLoadingDots 1.2s steps(1, end) infinite !important;
+    content: ".";
+    display: inline-block;
+    width: 1.5em;
+    margin-left: 2px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--primary-color);
+    animation: tailorLoadingDots 1.1s steps(1, end) infinite;
 }
 
 

@@ -238,23 +238,13 @@ def refund_demo_quota():
 # -----------------------------------------------------------------------------
 # Typography & Custom Workspace CSS (Overleaf-style Dual Theme Engine)
 # -----------------------------------------------------------------------------
-THEME_SYNC_SCRIPT = """
-<script>
-(function() {
-    try {
-        var t = localStorage.getItem('tailorai_theme_v2') || localStorage.getItem('tailorai_theme') || 'light';
-        document.documentElement.setAttribute('data-theme', t);
-    } catch(e) {}
-})();
-</script>
-"""
 css_mtime = CSS_PATH.stat().st_mtime if CSS_PATH.exists() else 0.0
 cached_css = get_cached_styles(css_mtime)
 if cached_css:
     try:
-        st.html(f"<style>{cached_css}</style>{THEME_SYNC_SCRIPT}")
+        st.html(f"<style>{cached_css}</style>")
     except AttributeError:
-        st.markdown(f"<style>{cached_css}</style>{THEME_SYNC_SCRIPT}", unsafe_allow_html=True)
+        st.markdown(f"<style>{cached_css}</style>", unsafe_allow_html=True)
 
 THEME_SWITCHER_HTML = """
 <!DOCTYPE html>
@@ -292,10 +282,10 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: 18px;
     width: 100%;
     max-width: 260px;
-    height: 48px;
+    height: 36px;
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.18s ease, border-color 0.18s ease;
@@ -757,6 +747,9 @@ if "tailored_resume" not in st.session_state:
 if "job_description" not in st.session_state:
     st.session_state["job_description"] = ""
 
+if "jd_version" not in st.session_state:
+    st.session_state["jd_version"] = 0
+
 if "diffs" not in st.session_state:
     st.session_state["diffs"] = []
 
@@ -774,6 +767,20 @@ def clear_form_state():
     for k in list(st.session_state.keys()):
         if k.startswith("form_"):
             del st.session_state[k]
+
+def set_job_description(text: str, bump_version: bool = True):
+    st.session_state["job_description"] = (text or "").strip()
+    if bump_version:
+        st.session_state["jd_version"] = st.session_state.get("jd_version", 0) + 1
+
+def _sync_jd_from_widget(widget_key: str):
+    st.session_state["job_description"] = st.session_state.get(widget_key, "").strip()
+
+def live_spinner(message: str):
+    try:
+        return st.spinner(message, show_time=True)
+    except TypeError:
+        return st.spinner(message)
 
 def handle_export_click():
     """Logs the export event cleanly."""
@@ -897,6 +904,7 @@ def call_gemini_extraction(raw_text: str, api_key: str) -> Optional[ResumeModel]
     prompt = f"""You are a precise resume parser. Extract the structured resume information from the candidate text below into the required JSON schema.
 Ensure all accomplishment bullets, dates (including for projects), technologies, education entries, and skills are extracted cleanly and categorized accurately.
 Populate summary, skill_categories (in addition to the flat skills list for deterministic ATS keyword math), projects[].dates, and certifications whenever present or derivable from the candidate text.
+Extract exact dates (month/year or date range) for EVERY project and experience entry whenever present in the candidate text—do not leave projects[].dates blank if a date exists. Normalize punctuation cleanly without double spaces around hyphens or em-dashes.
 
 Candidate Raw Text:
 {raw_text[:4000]}
@@ -969,24 +977,27 @@ def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
     """Renders a high-fidelity visual paper preview matching Trey Hunner's Medium Length CV format."""
     if not resume:
         return '<div class="paper-viewer"><div class="paper-sheet" style="text-align: center; color: #666;"><p>No resume document loaded.</p></div></div>'
-    
-    clean_name = " ".join(str(resume.name or "Untitled Resume").split())
-    name_safe = html.escape(clean_name, quote=True).upper()
-    clean_contact = " ".join(str(resume.contact_line or "").split())
-    contact_safe = html.escape(clean_contact, quote=True)
-    
+
+    def _clean_html(val) -> str:
+        text = " ".join(str(val or "").split())
+        text = re.sub(r"\s*([\u2013\u2014])\s*", r" \1 ", text)
+        return html.escape(text, quote=True)
+
+    name_safe = _clean_html(resume.name or "Untitled Resume").upper()
+    contact_safe = _clean_html(resume.contact_line)
+
     summary_section = ""
     if getattr(resume, "summary", ""):
-        clean_sum = " ".join(str(resume.summary or "").split())
+        clean_sum = _clean_html(resume.summary)
         if clean_sum:
-            summary_section = f'<div class="paper-section-title">Personal Summary</div><div class="paper-summary">{html.escape(clean_sum, quote=True)}</div>'
-    
+            summary_section = f'<div class="paper-section-title">Personal Summary</div><div class="paper-summary">{clean_sum}</div>'
+
     skills_section = ""
     if getattr(resume, "skill_categories", None):
         cat_rows = []
         for sc in resume.skill_categories:
-            cat_name = html.escape(" ".join(str(sc.category or "").split()), quote=True)
-            cat_items = html.escape(" ".join(str(sc.items or "").split()), quote=True)
+            cat_name = _clean_html(sc.category)
+            cat_items = _clean_html(sc.items)
             if cat_name or cat_items:
                 cat_rows.append(
                     f'<div class="paper-skill-row"><span class="paper-skill-cat">{cat_name}:</span><span class="paper-skill-val">{cat_items}</span></div>'
@@ -994,61 +1005,65 @@ def render_paper_preview_html(resume: Optional[ResumeModel]) -> str:
         if cat_rows:
             skills_section = f'<div class="paper-section-title">Skills</div><div class="paper-skills-grid">{"".join(cat_rows)}</div>'
     elif resume.skills:
-        clean_skills = [html.escape(" ".join(str(s).split()), quote=True) for s in resume.skills if str(s).strip()]
+        clean_skills = [_clean_html(s) for s in resume.skills if str(s).strip()]
         if clean_skills:
             skills_section = f'<div class="paper-section-title">Skills</div><div class="paper-skills">{", ".join(clean_skills)}</div>'
-            
+
     exp_html_list = []
     for exp in (resume.experience or []):
-        co_safe = html.escape(" ".join(str(exp.company or "").split()), quote=True)
-        role_safe = html.escape(" ".join(str(exp.role or "").split()), quote=True)
-        dt_safe = html.escape(" ".join(str(exp.dates or "").split()), quote=True)
-        bullets_safe = "".join([f"<li>{html.escape(' '.join(str(b or '').split()), quote=True)}</li>" for b in exp.bullets if str(b).strip()])
+        co_safe = _clean_html(exp.company)
+        role_safe = _clean_html(exp.role)
+        dt_safe = _clean_html(exp.dates)
+        bullets_safe = "".join([f"<li>{_clean_html(b)}</li>" for b in exp.bullets if str(b).strip()])
+        date_html = f'<span class="paper-item-date">{dt_safe}</span>' if dt_safe else ""
         sub_html = f'<div class="paper-item-sub"><span>{role_safe}</span></div>' if role_safe else ""
         bullets_html = f'<ul>{bullets_safe}</ul>' if bullets_safe else ""
         exp_html_list.append(
-            f'<div class="paper-item-header"><span class="paper-item-title">{co_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
+            f'<div class="paper-item-header"><span class="paper-item-title">{co_safe}</span>{date_html}</div>'
             f'{sub_html}{bullets_html}'
         )
     exp_section = ""
     if exp_html_list:
         exp_section = f'<div class="paper-section-title">Experience</div>' + "".join(exp_html_list)
-        
+
     proj_html_list = []
     for proj in (resume.projects or []):
-        name_p_safe = html.escape(" ".join(str(proj.name or "").split()), quote=True)
-        tech_safe = html.escape(" ".join(str(proj.tech_stack or "").split()), quote=True)
-        dt_safe = html.escape(" ".join(str(getattr(proj, "dates", "") or "").split()), quote=True)
-        bullets_safe = "".join([f"<li>{html.escape(' '.join(str(b or '').split()), quote=True)}</li>" for b in proj.bullets if str(b).strip()])
+        name_p_safe = _clean_html(proj.name)
+        tech_safe = _clean_html(proj.tech_stack)
+        dt_safe = _clean_html(getattr(proj, "dates", "") or "")
+        bullets_safe = "".join([f"<li>{_clean_html(b)}</li>" for b in proj.bullets if str(b).strip()])
+        date_html = f'<span class="paper-item-date">{dt_safe}</span>' if dt_safe else ""
         sub_html = f'<div class="paper-item-sub"><span>{tech_safe}</span></div>' if tech_safe else ""
         bullets_html = f'<ul>{bullets_safe}</ul>' if bullets_safe else ""
         proj_html_list.append(
-            f'<div class="paper-item-header"><span class="paper-item-title">{name_p_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
+            f'<div class="paper-item-header"><span class="paper-item-title">{name_p_safe}</span>{date_html}</div>'
             f'{sub_html}{bullets_html}'
         )
     proj_section = ""
     if proj_html_list:
         proj_section = f'<div class="paper-section-title">Projects</div>' + "".join(proj_html_list)
-        
+
     edu_html_list = []
     for edu in (resume.education or []):
-        inst_safe = html.escape(" ".join(str(edu.institution or "").split()), quote=True)
-        deg_safe = html.escape(" ".join(str(edu.degree or "").split()), quote=True)
-        dt_safe = html.escape(" ".join(str(edu.dates or "").split()), quote=True)
+        inst_safe = _clean_html(edu.institution)
+        deg_safe = _clean_html(edu.degree)
+        dt_safe = _clean_html(edu.dates)
+        date_html = f'<span class="paper-item-date">{dt_safe}</span>' if dt_safe else ""
+        sub_html = f'<div class="paper-item-sub"><span>{inst_safe}</span></div>' if inst_safe else ""
         edu_html_list.append(
-            f'<div class="paper-item-header"><span class="paper-item-title">{deg_safe}</span><span class="paper-item-date">{dt_safe}</span></div>'
-            f'<div class="paper-item-sub"><span>{inst_safe}</span></div>'
+            f'<div class="paper-item-header"><span class="paper-item-title">{deg_safe}</span>{date_html}</div>'
+            f'{sub_html}'
         )
     edu_section = ""
     if edu_html_list:
         edu_section = f'<div class="paper-section-title">Education</div>' + "".join(edu_html_list)
-        
+
     certs_section = ""
     if getattr(resume, "certifications", None):
-        cert_items = "".join([f"<li>{html.escape(' '.join(str(c or '').split()), quote=True)}</li>" for c in resume.certifications if str(c).strip()])
+        cert_items = "".join([f"<li>{_clean_html(c)}</li>" for c in resume.certifications if str(c).strip()])
         if cert_items:
             certs_section = f'<div class="paper-section-title">Certifications &amp; Awards</div><ul>{cert_items}</ul>'
-        
+
     return f'<div class="paper-viewer"><div class="paper-sheet"><h1>{name_safe}</h1><div class="paper-contact">{contact_safe}</div>{summary_section}{skills_section}{exp_section}{proj_section}{edu_section}{certs_section}</div></div>'
 
 @st.dialog("New Project", width="large")
@@ -1072,14 +1087,14 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
                         st.error("Demo quota limit reached (50/50). Please provide your personal Google AI Studio API Key in the sidebar.")
                         st.stop()
                 
-                with st.spinner("Extracting text from PDF (capped at 3 pages)"):
+                with live_spinner("Extracting text from PDF (capped at 3 pages)"):
                     raw_text = extract_pdf_text(pdf_file)
                 if gh_input_pdf.strip():
-                    with st.spinner("Fetching public GitHub repositories"):
+                    with live_spinner("Fetching public GitHub repositories"):
                         gh_text = fetch_github_repos(gh_input_pdf)
                         raw_text += gh_text
                 
-                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}"):
+                with live_spinner("Analyzing candidate context with Gemini AI"):
                     try:
                         parsed = call_gemini_extraction(raw_text, active_key)
                         if parsed:
@@ -1118,11 +1133,11 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
                 
                 raw_text = paste_text.strip()[:4000]
                 if gh_input_paste.strip():
-                    with st.spinner("Fetching public GitHub repositories"):
+                    with live_spinner("Fetching public GitHub repositories"):
                         gh_text = fetch_github_repos(gh_input_paste)
                         raw_text += gh_text
                 
-                with st.spinner(f"Analyzing candidate context with {MODEL_NAME}"):
+                with live_spinner("Analyzing candidate context with Gemini AI"):
                     try:
                         parsed = call_gemini_extraction(raw_text, active_key)
                         if parsed:
@@ -1148,7 +1163,7 @@ def open_new_project_modal(active_key: str, demo_mode: bool, user_api_key: str):
         if st.button("Load Sample Project", type="primary", key="btn_create_sample", use_container_width=True):
             clear_form_state()
             st.session_state["resume_data"] = copy.deepcopy(SAMPLE_RESUME)
-            st.session_state["job_description"] = SAMPLE_JOB_DESCRIPTION
+            set_job_description(SAMPLE_JOB_DESCRIPTION, bump_version=True)
             st.session_state["github_username"] = "erostova"
             st.session_state["tailored_resume"] = None
             st.session_state["diffs"] = []
@@ -1163,16 +1178,19 @@ def open_jd_modal():
     """Modal dialog to view or paste the target job posting."""
     st.caption("Paste the target role description, responsibilities, and required competencies.")
     current_jd = st.session_state.get("job_description", "")
+    jd_modal_key = f"modal_jd_textarea_{st.session_state.get('jd_version', 0)}"
     jd_val = st.text_area(
         "Job Posting Description",
         value=current_jd,
         height=320,
         placeholder="Paste full job description, required skills, qualification criteria, and responsibilities...",
-        key="modal_jd_textarea",
+        key=jd_modal_key,
         help="Caps at 4,000 characters for optimal ATS keyword extraction.",
     )
     char_count = len(jd_val)
     st.caption(f"{char_count:,} / 4,000 characters")
+    if char_count > 4000:
+        st.warning("Job description exceeds 4,000 characters. Only the first 4,000 characters will be analyzed by the AI.")
     c1, c2 = st.columns([0.65, 0.35], vertical_alignment="center")
     with c1:
         if current_jd.strip():
@@ -1181,7 +1199,7 @@ def open_jd_modal():
             st.markdown('<span style="color:#C94A4A; font-size:0.85rem; font-weight:600;">▲ No Job Description Set</span>', unsafe_allow_html=True)
     with c2:
         if st.button("Save Job Description", type="primary", use_container_width=True, key="modal_save_jd_btn"):
-            st.session_state["job_description"] = jd_val.strip()
+            set_job_description(jd_val, bump_version=True)
             st.success("Target Job Description saved!")
             st.rerun()
 
@@ -1246,7 +1264,7 @@ with st.sidebar:
         )
 
     st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
-    components.html(THEME_SWITCHER_HTML, height=52)
+    components.html(THEME_SWITCHER_HTML, height=40)
 
     # Resolve active keys early so + New Project works even though AI Engine Access is placed below
     cached_user_key = st.session_state.get("sidebar_user_key_input", "").strip()
@@ -1265,7 +1283,7 @@ with st.sidebar:
 
     active_key = cached_user_key if cached_user_key else (server_key if demo_mode else "")
 
-    st.markdown("---")
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     if st.button("+ New Project", type="primary", use_container_width=True, key="sidebar_btn_new_project"):
         st.session_state["open_new_project_flag"] = True
 
@@ -1279,10 +1297,12 @@ with st.sidebar:
     diff_icon = "●" if has_tailored else "○"
 
     st.caption(f"{res_icon} `master_resume.tex`")
-    st.caption(f"{jd_icon} `job_description.txt`")
+    if st.button(f"{jd_icon} job_description.txt", key="sidebar_file_jd_btn", use_container_width=True):
+        st.session_state["open_jd_modal_flag"] = True
+        st.rerun()
     st.caption(f"{diff_icon} `tailored_diff.json`")
 
-    st.markdown("---")
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### **AI Engine Access**")
     user_api_key = st.text_input(
         "Optional: Bring Your Own Gemini Key",
@@ -1313,7 +1333,7 @@ with st.sidebar:
         st.warning("No server key configured. Paste a free Google AI Studio key above.")
         active_key = ""
 
-    st.markdown("---")
+    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
     with st.expander("System & Telemetry", expanded=False):
         st.markdown("##### System Architecture")
         st.markdown(
@@ -1325,7 +1345,7 @@ with st.sidebar:
             - **Metrics:** Deterministic Python Math
             """
         )
-        st.markdown("---")
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
         telemetry = get_cached_telemetry_counts()
         st.markdown("##### Live Telemetry")
         st.caption(f"Resumes Parsed: **{telemetry['parse']}**")
@@ -1379,7 +1399,7 @@ if current_view == "home" or not has_project:
                 if st.button("Load Sample Project", type="secondary", use_container_width=True, key="home_sample_proj"):
                     clear_form_state()
                     st.session_state["resume_data"] = copy.deepcopy(SAMPLE_RESUME)
-                    st.session_state["job_description"] = SAMPLE_JOB_DESCRIPTION
+                    set_job_description(SAMPLE_JOB_DESCRIPTION, bump_version=True)
                     st.session_state["github_username"] = "erostova"
                     st.session_state["tailored_resume"] = None
                     st.session_state["diffs"] = []
@@ -1397,7 +1417,7 @@ if current_view == "home" or not has_project:
                 if st.button("Load Sample Project", type="secondary", use_container_width=True, key="empty_state_sample_proj"):
                     clear_form_state()
                     st.session_state["resume_data"] = copy.deepcopy(SAMPLE_RESUME)
-                    st.session_state["job_description"] = SAMPLE_JOB_DESCRIPTION
+                    set_job_description(SAMPLE_JOB_DESCRIPTION, bump_version=True)
                     st.session_state["github_username"] = "erostova"
                     st.session_state["tailored_resume"] = None
                     st.session_state["diffs"] = []
@@ -1468,6 +1488,10 @@ else:
 
     # Handle Tailor & Compile action
     if tailor_recompile_btn:
+        curr_jd_key = f"workspace_jd_input_{st.session_state.get('jd_version', 0)}"
+        if curr_jd_key in st.session_state and st.session_state[curr_jd_key].strip() and not st.session_state.get("job_description", "").strip():
+            st.session_state["job_description"] = st.session_state[curr_jd_key].strip()
+
         if not st.session_state.get("resume_data"):
             st.warning("Please create or load a resume project first.")
         elif not st.session_state.get("job_description", "").strip():
@@ -1482,7 +1506,7 @@ else:
                     st.error("Demo quota limit reached (50/50). Please use your personal Google AI Studio API Key in the sidebar.")
                     st.stop()
 
-            with st.spinner("Aligning accomplishment bullets with job description"):
+            with live_spinner("Aligning accomplishment bullets with job description"):
                 try:
                     base_resume: ResumeModel = st.session_state["resume_data"]
                     jd_text = st.session_state["job_description"]
@@ -1548,132 +1572,146 @@ else:
             st.caption("Amend parsed fields before running or re-running ATS tailoring.")
             current_resume: ResumeModel = st.session_state["resume_data"]
 
-            with st.form("resume_review_form"):
-                col_rev_1, col_rev_2 = st.columns([0.4, 0.6])
-                with col_rev_1:
-                    form_name = st.text_input("Full Name", value=current_resume.name, key="form_user_name")
-                with col_rev_2:
-                    form_contact = st.text_input(
-                        "Contact Line (Email | Phone | Location | Links)",
-                        value=current_resume.contact_line,
-                        key="form_user_contact",
+            try:
+                editor_container = st.container(height=580, border=False)
+            except TypeError:
+                editor_container = st.container()
+            with editor_container:
+                with st.form("resume_review_form"):
+                    col_rev_1, col_rev_2 = st.columns([0.4, 0.6])
+                    with col_rev_1:
+                        form_name = st.text_input("Full Name", value=current_resume.name, key="form_user_name")
+                    with col_rev_2:
+                        form_contact = st.text_input(
+                            "Contact Line (Email | Phone | Location | Links)",
+                            value=current_resume.contact_line,
+                            key="form_user_contact",
+                        )
+
+                    form_summary = st.text_area(
+                        "Personal Summary (Optional)",
+                        value=getattr(current_resume, "summary", "") or "",
+                        help="Concise 2-3 sentence professional overview.",
+                        key="form_user_summary",
                     )
 
-                form_summary = st.text_area(
-                    "Personal Summary (Optional)",
-                    value=getattr(current_resume, "summary", "") or "",
-                    help="Concise 2-3 sentence professional overview.",
-                    key="form_user_summary",
-                )
-
-                form_skills = st.text_area(
-                    "Technical Skills (comma-separated)",
-                    value=", ".join(current_resume.skills),
-                    help="Add or prune technical competencies.",
-                    key="form_user_skills",
-                )
-
-                st.markdown("##### Education")
-                edited_education = []
-                for i, edu in enumerate(current_resume.education):
-                    c_e1, c_e2, c_e3 = st.columns([0.4, 0.4, 0.2])
-                    with c_e1:
-                        e_inst = st.text_input(f"Institution {i+1}", value=edu.institution, key=f"form_edu_inst_{i}")
-                    with c_e2:
-                        e_deg = st.text_input(f"Degree {i+1}", value=edu.degree, key=f"form_edu_deg_{i}")
-                    with c_e3:
-                        e_dt = st.text_input(f"Dates {i+1}", value=edu.dates, key=f"form_edu_dates_{i}")
-                    edited_education.append(EducationItem(institution=e_inst, degree=e_deg, dates=e_dt))
-
-                st.markdown("##### Experience Bullets")
-                edited_experience = []
-                for i, exp in enumerate(current_resume.experience):
-                    st.markdown(f"**{exp.role}** at *{exp.company}* ({exp.dates})")
-                    new_bullets = []
-                    for j, b in enumerate(exp.bullets):
-                        val = st.text_input(
-                            f"Exp {i+1} • Bullet {j+1}",
-                            value=b,
-                            key=f"form_exp_{i}_{j}",
-                        )
-                        new_bullets.append(val)
-                    edited_experience.append(
-                        ExperienceItem(
-                            company=exp.company,
-                            role=exp.role,
-                            dates=exp.dates,
-                            bullets=new_bullets,
-                        )
+                    form_skills = st.text_area(
+                        "Technical Skills (comma-separated)",
+                        value=", ".join(current_resume.skills),
+                        help="Add or prune technical competencies.",
+                        key="form_user_skills",
                     )
 
-                st.markdown("##### Project Bullets")
-                edited_projects = []
-                for i, proj in enumerate(current_resume.projects):
-                    col_pj1, col_pj2 = st.columns([0.7, 0.3])
-                    with col_pj1:
-                        st.markdown(f"**{proj.name}** [{proj.tech_stack}]")
-                    with col_pj2:
-                        pj_dt = st.text_input(f"Proj {i+1} Dates", value=getattr(proj, "dates", "") or "", key=f"form_proj_dates_{i}")
-                    new_bullets = []
-                    for j, b in enumerate(proj.bullets):
-                        val = st.text_input(
-                            f"Proj {i+1} • Bullet {j+1}",
-                            value=b,
-                            key=f"form_proj_{i}_{j}",
+                    st.markdown("##### Education")
+                    edited_education = []
+                    for i, edu in enumerate(current_resume.education):
+                        c_e1, c_e2, c_e3 = st.columns([0.38, 0.36, 0.26])
+                        with c_e1:
+                            e_inst = st.text_input(f"Institution {i+1}", value=edu.institution, key=f"form_edu_inst_{i}")
+                        with c_e2:
+                            e_deg = st.text_input(f"Degree {i+1}", value=edu.degree, key=f"form_edu_deg_{i}")
+                        with c_e3:
+                            e_dt = st.text_input(f"Dates {i+1}", value=edu.dates, key=f"form_edu_dates_{i}")
+                        edited_education.append(EducationItem(institution=e_inst, degree=e_deg, dates=e_dt))
+
+                    st.markdown("##### Experience Bullets")
+                    edited_experience = []
+                    for i, exp in enumerate(current_resume.experience):
+                        st.markdown(f"**{exp.role}** at *{exp.company}* ({exp.dates})")
+                        new_bullets = []
+                        for j, b in enumerate(exp.bullets):
+                            val = st.text_area(
+                                f"Exp {i+1} • Bullet {j+1}",
+                                value=b,
+                                height=70,
+                                key=f"form_exp_{i}_{j}",
+                            )
+                            new_bullets.append(val)
+                        edited_experience.append(
+                            ExperienceItem(
+                                company=exp.company,
+                                role=exp.role,
+                                dates=exp.dates,
+                                bullets=new_bullets,
+                            )
                         )
-                        new_bullets.append(val)
-                    edited_projects.append(
-                        ProjectItem(
-                            name=proj.name,
-                            tech_stack=proj.tech_stack,
-                            bullets=new_bullets,
-                            dates=pj_dt,
+
+                    st.markdown("##### Project Bullets")
+                    edited_projects = []
+                    for i, proj in enumerate(current_resume.projects):
+                        col_pj1, col_pj2 = st.columns([0.55, 0.45])
+                        with col_pj1:
+                            st.markdown(f"**{proj.name}** [{proj.tech_stack}]")
+                        with col_pj2:
+                            pj_dt = st.text_input(f"Proj {i+1} Dates", value=getattr(proj, "dates", "") or "", key=f"form_proj_dates_{i}")
+                        new_bullets = []
+                        for j, b in enumerate(proj.bullets):
+                            val = st.text_area(
+                                f"Proj {i+1} • Bullet {j+1}",
+                                value=b,
+                                height=70,
+                                key=f"form_proj_{i}_{j}",
+                            )
+                            new_bullets.append(val)
+                        edited_projects.append(
+                            ProjectItem(
+                                name=proj.name,
+                                tech_stack=proj.tech_stack,
+                                bullets=new_bullets,
+                                dates=pj_dt,
+                            )
                         )
+
+                    form_certs = st.text_area(
+                        "Certifications & Awards (one per line, optional)",
+                        value="\n".join(getattr(current_resume, "certifications", []) or []),
+                        help="One certification, award, or honor per line.",
+                        key="form_user_certs",
                     )
 
-                form_certs = st.text_area(
-                    "Certifications & Awards (one per line, optional)",
-                    value="\n".join(getattr(current_resume, "certifications", []) or []),
-                    help="One certification, award, or honor per line.",
-                    key="form_user_certs",
-                )
-
-                save_changes = st.form_submit_button("Save & Update Candidate Profile")
-                if save_changes:
-                    updated_skills = [
-                        s.strip() for s in form_skills.split(",") if s.strip()
-                    ]
-                    updated_certs = [
-                        c.strip() for c in form_certs.split("\n") if c.strip()
-                    ]
-                    st.session_state["resume_data"] = ResumeModel(
-                        name=form_name,
-                        contact_line=form_contact,
-                        summary=form_summary.strip(),
-                        education=edited_education if edited_education else current_resume.education,
-                        experience=edited_experience,
-                        projects=edited_projects,
-                        skills=updated_skills,
-                        skill_categories=getattr(current_resume, "skill_categories", []),
-                        certifications=updated_certs,
-                    )
-                    clear_form_state()
-                    st.success("Candidate profile updated in session state!")
-                    st.rerun()
+                    save_changes = st.form_submit_button("Save & Update Candidate Profile", type="primary")
+                    if save_changes:
+                        updated_skills = [
+                            s.strip() for s in form_skills.split(",") if s.strip()
+                        ]
+                        updated_certs = [
+                            c.strip() for c in form_certs.split("\n") if c.strip()
+                        ]
+                        st.session_state["resume_data"] = ResumeModel(
+                            name=form_name,
+                            contact_line=form_contact,
+                            summary=form_summary.strip(),
+                            education=edited_education if edited_education else current_resume.education,
+                            experience=edited_experience,
+                            projects=edited_projects,
+                            skills=updated_skills,
+                            skill_categories=getattr(current_resume, "skill_categories", []),
+                            certifications=updated_certs,
+                        )
+                        clear_form_state()
+                        st.success("Candidate profile updated in session state!")
+                        st.rerun()
 
         with tab_jd:
             st.markdown("#### **Target Job Description**")
+            jd_key = f"workspace_jd_input_{st.session_state.get('jd_version', 0)}"
             jd_input = st.text_area(
                 "Paste Target Job Posting (Caps at 4,000 characters)",
                 value=st.session_state.get("job_description", ""),
-                height=420,
+                height=340,
                 placeholder="Paste role requirements, responsibilities, and technical stack...",
-                key="workspace_jd_input",
+                key=jd_key,
+                on_change=_sync_jd_from_widget,
+                args=(jd_key,),
             )
             char_len = len(jd_input)
             st.caption(f"{char_len:,} / 4,000 characters")
-            if jd_input != st.session_state.get("job_description", ""):
-                st.session_state["job_description"] = jd_input
+            if char_len > 4000:
+                st.warning("Job description exceeds 4,000 characters. Only the first 4,000 characters will be analyzed by the AI.")
+            if st.button("Save Job Description", type="primary", key="workspace_save_jd_btn"):
+                set_job_description(jd_input, bump_version=False)
+                st.success("Target Job Description saved!")
+                st.rerun()
 
     # Right Column: Visual Preview, ATS Metrics & Diffs, Cover Letter
     with right_col:
@@ -1800,7 +1838,7 @@ else:
                             st.error("Demo quota limit reached (50/50). Please use your personal Google AI Studio API Key in the sidebar.")
                             st.stop()
 
-                    with st.spinner(f"Drafting bespoke cover letter with {MODEL_NAME}"):
+                    with live_spinner("Drafting bespoke cover letter with Gemini AI"):
                         try:
                             cv_text = call_gemini_cover_letter(
                                 active_for_cv,
